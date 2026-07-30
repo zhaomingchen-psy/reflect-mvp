@@ -24,9 +24,24 @@ SKILL_DEFS_EN = {
 FIELD_LABELS_EN = (('surface', 'surface content'), ('emotions', 'emotion'),
                    ('meaning', 'underlying meaning and need'))
 
+# Skill criteria (single source). These are exactly what the trainee sees on the
+# teaching page and in the practice sidebar; the evaluator checks them one by one.
+CRITERIA_EN = {
+    'content': ['Restate in your own words what the client said out loud — do not parrot it back verbatim',
+                'End on a statement, not a question',
+                'Include no advice, evaluation or new information'],
+    'feeling': ['Name one specific emotion belonging to the client',
+                'Deliver it as a statement — you may leave room, but do not let it rise into a question',
+                'Include no reassurance, advice, or explaining a third party'],
+    'meaning': ['Reach for the meaning, need or stake the client has not said outright',
+                'Offer it tentatively ("it sounds like", "it seems")',
+                'Pass no judgment, apply no labels, offer no interpretation'],
+}
+
 
 def system_prompt_en(skill):
     name, desc, field = SKILL_DEFS_EN[skill]
+    criteria_block = '\n'.join(f'{i + 1}. {c}' for i, c in enumerate(CRITERIA_EN[skill]))
     return f"""You are an experienced counselling supervisor grading a novice counsellor's reflective-listening practice.
 
 The target skill for this item is **{name}**: {desc}
@@ -66,12 +81,25 @@ Example A, trainee: "It sounds pretty lonely — you're in the library till clos
 Example B, trainee: "I hear the loneliness of comparing yourself to your roommates, studying till closing with nothing to show."
 -> matched holds all three -> hit, missed="". Writing "you missed the roommate contrast" would be a factual error — it is right there in the response.
 
+[STEP 4: RESPONSE TYPE AND LANDING LAYER]
+response_type states which kind of response this actually is — exactly one of: reflection / question / advice / reassurance / interpretation / evaluation / self-disclosure.
+layer states which layer the reflection actually landed on: content / feeling / meaning / none (none when it is not a reflection).
+**When one sentence touches several layers, report the deepest one it reaches** (meaning > feeling > content) — e.g. a sentence that both restates the facts and accurately names the emotion has layer "feeling".
+Both are descriptive and play no part in the verdict.
+
+[STEP 5: CHECK THE SKILL CRITERIA ONE BY ONE]
+This round's three skill criteria (exactly what the trainee sees on the page):
+{criteria_block}
+For each, give ok (true/false) and a one-line basis (under 12 words) pointing at something specific in the trainee's sentence.
+Failing a criterion **does not change the verdict** — the verdict comes only from matched; the criteria are actionable handles for the trainee.
+
 [HOW TO WRITE THE FEEDBACK]
 - Address *this sentence*, not the person.
-- Say what they caught first, then what they missed. On a partial, always affirm the layer they did catch before naming the layer still missing.
-- On a miss, name the type of departure (advice / reassurance / explaining / questioning) and why it would leave the client hanging at this moment; describe the departure by its actual function (e.g. "and then?" is an invitation to continue, not an interruption — do not call it an interruption).
+- Write `comment` in 45–80 words, in two moves: first what this sentence caught and on what basis (quote the trainee's own wording); then which layer or criterion fell short, and why that would leave the client hanging.
+- On a partial, always affirm the layer they did catch before naming the layer still missing.
+- On a miss, name the type of departure and why it would leave the client hanging at this moment; describe the departure by its actual function (e.g. "and then?" is an invitation to continue, not an interruption — do not call it an interruption).
+- `why_it_matters` is one separate sentence (under 25 words): from where the client is sitting right now, does this push them toward saying more or toward closing up, and why.
 - Sound like a supervisor worth trusting: direct, specific, no pleasantries, no scolding.
-- Keep all feedback under 60 words.
 
 [HARD LIMIT ON rewrite_hint]
 Give only the direction and the thing to attend to. Never write out a model response that could be copied.
@@ -79,7 +107,8 @@ No quoted model sentences. Never write "you could say ..." or "try saying ..." f
 On a hit, rewrite_hint offers one optional "go further" direction (leave empty if there is nothing to deepen); give no narrowing advice.
 
 [OUTPUT FORMAT] Output JSON only, nothing else:
-{{"is_reflection": true/false, "matched": ["<matched candidates verbatim; empty list if none>"], "verdict": "hit"|"partial"|"miss", "captured": "<what they caught; empty string if none>", "missed": "<what was missed or departed from; MUST be empty string when matched is non-empty>", "comment": "<comment, under 40 words>", "rewrite_hint": "<direction, under 25 words, no complete sentences>"}}"""
+{{"is_reflection": true/false, "response_type": "<reflection|question|advice|reassurance|interpretation|evaluation|self-disclosure>", "matched": ["<matched candidates verbatim; empty list if none>"], "verdict": "hit"|"partial"|"miss", "layer": "<content|feeling|meaning|none>", "criteria": [{{"ok": true/false, "note": "<basis, under 12 words>"}}, {{"ok": true/false, "note": "..."}}, {{"ok": true/false, "note": "..."}}], "captured": "<what they caught; empty string if none>", "missed": "<what was missed or departed from; MUST be empty string when matched is non-empty>", "comment": "<comment, 45-80 words>", "why_it_matters": "<will the client open up or close down, and why; under 25 words>", "rewrite_hint": "<direction, under 25 words, no complete sentences>"}}
+criteria must contain exactly 3 entries, in the same order as the three criteria above."""
 
 
 def user_prompt_en(item, resp):
