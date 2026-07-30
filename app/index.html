@@ -65,6 +65,33 @@
   .polish{border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:14px;background:#f6f8fb}
   .polish .pr{color:var(--sub);font-size:12px;margin-top:6px}
   .polish button{font-size:13px;padding:5px 14px;margin-top:8px;margin-right:8px}
+  /* ---- 练习页双栏 ---- */
+  .wrap.wide{max-width:1180px}
+  .cols{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:18px;align-items:start}
+  .side{position:sticky;top:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 40px);overflow-y:auto}
+  .side .card{padding:14px 16px;margin-bottom:0}
+  .side h4{font-size:13px;color:var(--accent);margin-bottom:6px;font-weight:700}
+  .side .b{font-size:13px;line-height:1.65}
+  .side ul{margin:4px 0 0 18px;font-size:13px}
+  .side li{margin-top:3px}
+  .side details{font-size:13px;margin-top:8px}
+  .side details summary{cursor:pointer;color:var(--accent);font-size:12px}
+  .sdemo{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12px;line-height:1.6}
+  .sdemo .who{color:var(--sub)}
+  .crit{font-size:13px;margin-top:6px}
+  .crit li{margin-top:5px;list-style:none}
+  .crit .ck{font-weight:700;margin-right:5px}
+  .crit .yes{color:var(--hit)} .crit .no{color:var(--miss)} .crit .na{color:var(--sub)}
+  .crit .note{color:var(--sub);font-size:12px;display:block;margin-left:18px}
+  .hist{border-left:3px solid var(--line);padding-left:10px;margin-top:10px;font-size:13px}
+  .hist .r{color:var(--sub);font-size:12px;margin-bottom:3px}
+  .badge{font-size:11px;padding:1px 7px;border-radius:99px}
+  .badge.hit{background:var(--hitbg);color:var(--hit)}
+  .badge.partial{background:var(--partialbg);color:var(--partial)}
+  .badge.miss{background:var(--missbg);color:var(--miss)}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .meta span{font-size:11px;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--sub)}
+  @media (max-width:900px){.cols{grid-template-columns:1fr}.side{position:static;max-height:none}}
 </style>
 </head>
 <body>
@@ -83,6 +110,11 @@ const T={
   skipToConv:'↳ 跳过题目，直接开始对话练习',
   scaLine:'标准化评估（SCA）——由主试安排时进入，日常练习无需点击：',formA:'A 卷',formB:'B 卷',
   goalBanner:'本周练习方向',goalFrom:'（来自上次复盘）',
+  refTitle:'随时回看',refDef:'这个技能是什么',refCrit:'技术标准',refHow:'怎么做',
+  refPit:'容易滑向的偏离',refDemo:'对照示范',refGood:'较好',refBad:'偏离',
+  histTitle:'你这道题的历次反馈',histRound:n=>`第 ${n} 次作答`,histNone:'提交后，历次反馈会留在这里，方便对照修改。',
+  critTitle:'技术标准核对',respType:'回应类型',landLayer:'落在哪一层',
+  whyMatters:'来访者此刻会怎样',clientSaid:'来访者：',yourResp:'你写的：',
   demoTitle:'示范与定义',criteria:'技术标准',criteriaNote:'——练习与反馈都对着这三条',
   howto:'怎么做',pitfalls:'最容易滑向的偏离',demos:'对照示范',
   placeholderNote:'注：本页教学内容为占位稿，正式版将替换为课程教材的定义与示例。',
@@ -90,7 +122,7 @@ const T={
   qOf:(a,b)=>`第 ${a}/${b} 题`,attempt:n=>`第 ${n} 次作答`,
   respLabel:n=>`请用一句${n}回应他／她：`,
   selfRate:'自评（可选）：你觉得这句反映的质量如何？',selfRateNote:'不评不影响练习',unrated:'未评',
-  submit:'提交，看反馈',grading:'督导批改中…',needResp:'先写下你的回应。',
+  submit:'提交，看反馈',grading:'督导批改中…（约 10 秒，会逐条核对技术标准）',needResp:'先写下你的回应。',
   vHit:'✓ 命中',vPartial:'◐ 部分命中',vMiss:'✗ 脱靶',
   captured:'你接住了',stillMiss:'还差在哪',noteIf:'可留意',comment:'督导点评',
   hintMore:'更进一步（选做）',hintFix:'改写方向',
@@ -139,6 +171,11 @@ const T={
   skipToConv:'↳ Skip the items, go straight to conversation practice',
   scaLine:'Standardised assessment (SCA) — enter only when your administrator asks you to:',formA:'Form A',formB:'Form B',
   goalBanner:'Your focus this week',goalFrom:'(from your last debrief)',
+  refTitle:'Reference',refDef:'What this skill is',refCrit:'Skill criteria',refHow:'How to do it',
+  refPit:'Where it slips',refDemo:'Contrasting examples',refGood:'better',refBad:'departure',
+  histTitle:'Your feedback on this item',histRound:n=>`attempt ${n}`,histNone:'After you submit, each round of feedback stays here so you can compare while revising.',
+  critTitle:'Criteria check',respType:'Response type',landLayer:'Landed on',
+  whyMatters:'What the client does next',clientSaid:'Client: ',yourResp:'You wrote: ',
   demoTitle:'Worked examples and definition',criteria:'Skill criteria',criteriaNote:'— practice and feedback both address these three',
   howto:'How to do it',pitfalls:'Where it most easily slips',demos:'Contrasting examples',
   placeholderNote:'Note: this teaching content is a placeholder; the final version will use the definitions and examples from the course textbook.',
@@ -146,7 +183,7 @@ const T={
   qOf:(a,b)=>`item ${a}/${b}`,attempt:n=>`attempt ${n}`,
   respLabel:n=>`Respond with one ${n}:`,
   selfRate:'Self-rating (optional): how good was that reflection?',selfRateNote:'skipping it changes nothing',unrated:'not rated',
-  submit:'Submit for feedback',grading:'Supervisor is reading…',needResp:'Write your response first.',
+  submit:'Submit for feedback',grading:'Supervisor is reading… (about 10s — each criterion is checked)',needResp:'Write your response first.',
   vHit:'✓ Hit',vPartial:'◐ Partial',vMiss:'✗ Miss',
   captured:'What you caught',stillMiss:'What was missing',noteIf:'Worth noting',comment:'Supervisor comment',
   hintMore:'To go further (optional)',hintFix:'Direction for a rewrite',
@@ -274,7 +311,7 @@ const SKILL_INTRO_ZH={
       r:'你这是典型的回避型依恋，从小和父亲的关系模式决定了你们现在没法沟通。',tag:'bad',badtype:'常见偏离 · 过度解释／贴标签',note:'把活人装进了术语盒子。哪怕分析是对的，此刻它也只会让对方防御——反映是陪他看见，不是替他诊断。'}]}};
 const SKILL_INTRO_ALL={zh:SKILL_INTRO_ZH,en:SKILL_INTRO_EN};
 let SKILL_INTRO=SKILL_INTRO_ALL[LANG];
-let ITEMS=[],SKILLS={},cur=null,attempt=1,results={},RATE_TOUCHED=false;
+let ITEMS=[],SKILLS={},CRITERIA={},cur=null,attempt=1,results={},HIST={},RATE_TOUCHED=false;
 let USER=localStorage.getItem('psyclient_user')||'';
 let GOAL=null;
 
@@ -286,6 +323,7 @@ async function loadGoal(){
 function goalLine(){
   return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${t.goalFrom}：${esc2(GOAL)}</div>`:'';
 }
+function narrow(){document.querySelector('.wrap').classList.remove('wide');}
 function langBar(){
   return `<div style="text-align:right;font-size:12px;margin-bottom:8px">
     <a href="#" style="color:${LANG==='zh'?'var(--accent)':'var(--sub)'};font-weight:${LANG==='zh'?'700':'400'}" onclick="switchLang('zh');return false">中文</a>
@@ -298,7 +336,7 @@ async function boot(){
   let r=await api('/api/items?lang='+LANG);
   if(r.status===401){return askCode();}
   const d=await r.json();
-  ITEMS=d.items;SKILLS=d.skills;
+  ITEMS=d.items;SKILLS=d.skills;CRITERIA=d.criteria||{};
   if(!USER){askUser();}else{await loadGoal();home();}
 }
 function askCode(bad){
@@ -333,6 +371,7 @@ async function setUser(){
   USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();home();
 }
 function home(){
+  narrow();
   const bySkill={};ITEMS.forEach(it=>{(bySkill[it.skill]=bySkill[it.skill]||[]).push(it)});
   let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}</div>`;
   for(const [sk,items] of Object.entries(bySkill)){
@@ -348,8 +387,10 @@ function home(){
 let queue=[],qi=0;
 const LV=n=>t.lv[n]||'';
 function startSkill(sk){
+  narrow();
   queue=ITEMS.filter(i=>i.skill===sk).sort((a,b)=>(a.level||2)-(b.level||2));qi=0;
   const s=SKILL_INTRO[sk];
+  const critList=(CRITERIA[sk]||s.criteria||[]);
   const demoHtml=s.demos.map(d=>`
     <div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px">
       <div class="ctx" style="margin-bottom:8px">来访者：${d.c}</div>
@@ -361,7 +402,7 @@ function startSkill(sk){
     <p style="margin-bottom:8px"><b>${s.def}</b></p>
     <p class="sub" style="font-size:14px;margin-bottom:14px">${s.why}</p>
     <div style="font-size:14px"><b>${t.criteria}</b><span class="sub" style="font-size:12px">${t.criteriaNote}</span></div>
-    <ul style="font-size:14px;margin:4px 0 12px 20px">${s.criteria.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
+    <ul style="font-size:14px;margin:4px 0 12px 20px">${critList.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
     <div style="font-size:14px"><b>${t.howto}</b></div>
     <ul style="font-size:14px;margin:4px 0 12px 20px">${s.how.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
     <div style="font-size:14px"><b>${t.pitfalls}</b></div>
@@ -377,10 +418,42 @@ function showItem(){
   cur=queue[qi];attempt=1;
   render();
 }
+function sideRef(){
+  const s=SKILL_INTRO[cur.skill];
+  const crit=(CRITERIA[cur.skill]||s.criteria||[]);
+  const demos=s.demos.map(d=>`<div class="sdemo">
+      <div class="who">${t.clientSaid}${esc2(d.c)}</div>
+      <div style="margin-top:4px"><span class="badge ${d.tag==='good'?'hit':'miss'}">${d.tag==='good'?t.refGood:t.refBad}</span> ${esc2(d.r)}</div>
+    </div>`).join('');
+  return `<div class="card">
+    <h4>${t.refTitle} · ${s.name}</h4>
+    <div class="b">${s.def}</div>
+    <details open><summary>${t.refCrit}</summary>
+      <ul>${crit.map(x=>`<li>${x}</li>`).join('')}</ul></details>
+    <details><summary>${t.refHow}</summary>
+      <ul>${s.how.map(x=>`<li>${x}</li>`).join('')}</ul></details>
+    <details><summary>${t.refPit}</summary>
+      <ul>${s.pitfalls.map(x=>`<li>${x}</li>`).join('')}</ul></details>
+    <details><summary>${t.refDemo}</summary>${demos}</details>
+  </div>`;
+}
+function sideHist(){
+  const h=HIST[cur.id]||[];
+  if(!h.length)return `<div class="card"><h4>${t.histTitle}</h4>
+    <div class="b" style="color:var(--sub)">${t.histNone}</div></div>`;
+  return `<div class="card"><h4>${t.histTitle}</h4>
+    ${h.map(x=>`<div class="hist">
+      <div class="r">${t.histRound(x.attempt)} <span class="badge ${x.f.verdict}">${vLabel(x.f.verdict)}</span></div>
+      <div style="font-size:12px;color:var(--sub);margin-bottom:4px">${t.yourResp}${esc2(x.resp)}</div>
+      ${x.f.comment?`<div style="font-size:12px">${esc2(x.f.comment)}</div>`:''}
+      ${x.f.rewrite_hint?`<div style="font-size:12px;color:var(--accent);margin-top:3px">→ ${esc2(x.f.rewrite_hint)}</div>`:''}
+    </div>`).join('')}</div>`;
+}
 function render(prevResp){
   RATE_TOUCHED=false;
   const s=SKILL_INTRO[cur.skill];
-  $('#app').innerHTML=`
+  document.querySelector('.wrap').classList.add('wide');
+  $('#app').innerHTML=`<div class="cols"><div>
   <div class="card">
     ${goalLine()}
     <span class="tag">${s.name} · ${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
@@ -397,7 +470,8 @@ function render(prevResp){
     <div id="fb"></div>
     <div class="nav"><div class="dots">${queue.map((q,i)=>`<div class="dot ${i<qi?'done':i===qi?'cur':''}"></div>`).join('')}</div>
     <div></div></div>
-  </div>`;
+  </div></div>
+  <div class="side" id="side">${sideRef()}${sideHist()}</div></div>`;
 }
 async function submit(){
   const resp=$('#resp').value.trim();
@@ -416,16 +490,30 @@ async function submit(){
 function showFeedback(f,resp){
   const v=f.verdict;
   results[cur.id]=v;
+  (HIST[cur.id]=HIST[cur.id]||[]).push({attempt,resp,f});
+  const crit=(CRITERIA[cur.skill]||SKILL_INTRO[cur.skill].criteria||[]);
+  const cs=(f.criteria||[]).map((c,i)=>{
+    const mark=c.ok===true?'<span class="ck yes">✓</span>':c.ok===false?'<span class="ck no">✗</span>':'<span class="ck na">–</span>';
+    return `<li>${mark}${crit[i]||''}${c.note?`<span class="note">${esc2(c.note)}</span>`:''}</li>`;
+  }).join('');
   const rows=[];
   if(f.captured)rows.push([t.captured,f.captured]);
   if(f.missed)rows.push([v==='hit'?t.noteIf:t.stillMiss,f.missed]);
   if(f.comment)rows.push([t.comment,f.comment]);
+  if(f.why_it_matters)rows.push([t.whyMatters,f.why_it_matters]);
   if(f.rewrite_hint)rows.push([v==='hit'?t.hintMore:t.hintFix,f.rewrite_hint]);
   const canRetry=attempt<3&&v!=='hit';
   $('#fb').innerHTML=`<div class="fb ${v}"><div class="verdict">${vLabel(v)}</div>
+    <div class="meta">
+      ${f.response_type?`<span>${t.respType}: ${esc2(f.response_type)}</span>`:''}
+      ${f.layer?`<span>${t.landLayer}: ${esc2(f.layer)}</span>`:''}
+    </div>
     <dl>${rows.map(([a,c])=>`<dt>${a}</dt><dd>${c}</dd>`).join('')}</dl>
+    ${cs?`<dt style="color:var(--sub);font-size:12px;margin-top:10px">${t.critTitle}</dt>
+      <ul class="crit">${cs}</ul>`:''}
     ${canRetry?`<button onclick="retry('${encodeURIComponent(resp)}')">${t.retry(attempt+1)}</button>`:''}
     <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button></div>`;
+  const sd=$('#side'); if(sd)sd.innerHTML=sideRef()+sideHist();
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
 function retry(prev){attempt++;render(decodeURIComponent(prev));}
@@ -437,6 +525,7 @@ function next(){
   showItem();
 }
 function diffCheck(lv,nextLv){
+  narrow();
   $('#app').innerHTML=`<div class="card"><span class="tag">${t.diffTitle(LV(lv))}</span>
     <p style="margin:10px 0">${t.diffQ}</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -458,6 +547,7 @@ function diffAns(lv,ans){
     <button class="ghost" onclick="showItem()">${t.goOn}</button>`;
 }
 function finish(){
+  narrow();
   const sk=queue[0].skill;
   $('#app').innerHTML=`<div class="card"><b>${t.finishTitle}</b>
     <p class="sub" style="margin-top:8px">${t.finishSub}</p>
@@ -479,6 +569,7 @@ async function startConv(sk){
   }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">返回</button></div>`;}
 }
 function drawConv(busy){
+  narrow();
   const s=SKILL_INTRO[CONV.skill];
   $('#app').innerHTML=`<div class="card">
     ${goalLine()}
@@ -570,6 +661,7 @@ function sparkline(vals){
   return `<svg width="${w}" height="${hh}" style="vertical-align:middle"><polyline points="${pts}" fill="none" stroke="var(--line)" stroke-width="2"/>${dots}</svg>`;
 }
 function drawDebrief(d){
+  narrow();
   DEBRIEF=d;
   loadGoal();  // 服务器已把本次改进方向存为新目标，刷新置顶横幅
   const vc={hit:0,partial:0,miss:0};d.verdicts.forEach(v=>{if(vc[v]!==undefined)vc[v]++;});
@@ -656,6 +748,7 @@ async function startSCA(form){
   }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">${t.back}</button></div>`;}
 }
 function drawSCA(busy){
+  narrow();
   $('#app').innerHTML=`<div class="card">
     <span class="tag">${t.scaTag(SCA.form,SCA.turn,SCA.total)}</span>
     <div class="bg">${SCA.bg}</div>

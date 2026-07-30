@@ -52,8 +52,8 @@ def _load_items(fn):
 ITEMS_BY_LANG = {'zh': _load_items('items.json'), 'en': _load_items('items_en.json')}
 ITEMS = ITEMS_BY_LANG['zh']   # 兼容旧引用
 
-from prompt import SKILL_DEFS, system_prompt, user_prompt, postprocess  # noqa: E402  提示词单一来源
-from prompt_en import SKILL_DEFS_EN, system_prompt_en, user_prompt_en  # noqa: E402
+from prompt import SKILL_DEFS, CRITERIA, system_prompt, user_prompt, postprocess  # noqa: E402  提示词单一来源
+from prompt_en import SKILL_DEFS_EN, CRITERIA_EN, system_prompt_en, user_prompt_en  # noqa: E402
 import convo      # noqa: E402  对话练习模式（中文）
 import convo_en   # noqa: E402  对话练习模式（英文）
 
@@ -61,13 +61,13 @@ import convo_en   # noqa: E402  对话练习模式（英文）
 def L(lang):
     """按语言返回该语言的全部资源。未知语言退回中文。"""
     if lang == 'en':
-        return dict(lang='en', items=ITEMS_BY_LANG['en'], defs=SKILL_DEFS_EN,
+        return dict(lang='en', items=ITEMS_BY_LANG['en'], defs=SKILL_DEFS_EN, crit=CRITERIA_EN,
                     sys=system_prompt_en, usr=user_prompt_en,
                     conv_cases=convo_en.CONV_CASES_EN, sca_cases=convo_en.SCA_CASES_EN,
                     client_sys=convo_en.client_system_prompt_en, client_usr=convo_en.client_user_prompt_en,
                     sum_sys=convo_en.summary_system_prompt_en, sum_usr=convo_en.summary_user_prompt_en,
                     pol_sys=convo_en.polish_system_prompt_en, pol_usr=convo_en.polish_user_prompt_en)
-    return dict(lang='zh', items=ITEMS_BY_LANG['zh'], defs=SKILL_DEFS,
+    return dict(lang='zh', items=ITEMS_BY_LANG['zh'], defs=SKILL_DEFS, crit=CRITERIA,
                 sys=system_prompt, usr=user_prompt,
                 conv_cases=convo.CONV_CASES, sca_cases=convo.SCA_CASES,
                 client_sys=convo.client_system_prompt, client_usr=convo.client_user_prompt,
@@ -402,7 +402,8 @@ class H(BaseHTTPRequestHandler):
             # 学员可见字段——绝不下发标注
             vis = [{k: it.get(k) for k in ('id', 'skill', 'background', 'context', 'utterance', 'level', 'affect')}
                    for it in r['items'].values()]
-            self._send(200, {'items': vis, 'skills': {k: v[0] for k, v in r['defs'].items()}})
+            self._send(200, {'items': vis, 'skills': {k: v[0] for k, v in r['defs'].items()},
+                             'criteria': r['crit']})
         elif base == '/api/review_data':
             if not self._authed():
                 return self._send(401, {'error': 'access code required'})
