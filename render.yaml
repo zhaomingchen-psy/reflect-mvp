@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: reflect-mvp
+    runtime: python
+    plan: free
+    # 零依赖：不需要 requirements.txt，Python 标准库即可
+    buildCommand: "echo no build step"
+    startCommand: "python3 app/server.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: API_KEY
+        sync: false          # 在 Render 后台手填，不进代码库
+      - key: BASE_URL
+        value: https://open.bigmodel.cn/api/paas/v4
+      - key: MODEL
+        value: glm-4.6
+      - key: MODEL_GEN
+        value: glm-4.6
+      - key: ACCESS_CODE
+        sync: false          # 访问口令，在后台手填
