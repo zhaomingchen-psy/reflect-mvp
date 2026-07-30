@@ -42,9 +42,9 @@
   .dots{display:flex;gap:6px}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
   .dot.cur{background:var(--accent)} .dot.done{background:var(--hit)}
-  .home button{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);
+  .home>button{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);
                border:1px solid var(--line);padding:16px 18px;margin-top:10px}
-  .home button:hover{border-color:var(--accent)}
+  .home>button:hover{border-color:var(--accent)}
   .home b{color:var(--accent)}
   .spin{color:var(--sub);font-size:14px;margin-top:14px;display:none}
   .err{color:var(--miss);font-size:14px;margin-top:10px}
@@ -114,6 +114,8 @@ const T={
   refPit:'容易滑向的偏离',refDemo:'对照示范',refGood:'较好',refBad:'偏离',
   histTitle:'你这道题的历次反馈',histRound:n=>`第 ${n} 次作答`,histNone:'提交后，历次反馈会留在这里，方便对照修改。',
   critTitle:'技术标准核对',respType:'回应类型',landLayer:'落在哪一层',
+  jumpConv:'直接进入对话练习',jumpConvNote:'不必做完题目，随时可以进',
+  convNow:'对话练习',backItems:'回到题目',
   whyMatters:'来访者此刻会怎样',clientSaid:'来访者：',yourResp:'你写的：',
   demoTitle:'示范与定义',criteria:'技术标准',criteriaNote:'——练习与反馈都对着这三条',
   howto:'怎么做',pitfalls:'最容易滑向的偏离',demos:'对照示范',
@@ -175,6 +177,8 @@ const T={
   refPit:'Where it slips',refDemo:'Contrasting examples',refGood:'better',refBad:'departure',
   histTitle:'Your feedback on this item',histRound:n=>`attempt ${n}`,histNone:'After you submit, each round of feedback stays here so you can compare while revising.',
   critTitle:'Criteria check',respType:'Response type',landLayer:'Landed on',
+  jumpConv:'Go straight to conversation practice',jumpConvNote:'No need to finish the items first',
+  convNow:'Conversation practice',backItems:'Back to the items',
   whyMatters:'What the client does next',clientSaid:'Client: ',yourResp:'You wrote: ',
   demoTitle:'Worked examples and definition',criteria:'Skill criteria',criteriaNote:'— practice and feedback both address these three',
   howto:'How to do it',pitfalls:'Where it most easily slips',demos:'Contrasting examples',
@@ -376,7 +380,15 @@ function home(){
   let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}</div>`;
   for(const [sk,items] of Object.entries(bySkill)){
     const done=items.filter(i=>results[i.id]).length;
-    h+=`<button onclick="startSkill('${sk}')"><b>${SKILLS[sk]}</b> · ${items.length}${t.items}${t.plusConv}${done?`${t.doneN}${done}`:''}<br><span style="font-size:13px;color:var(--sub)">${SKILL_INTRO[sk].def}</span><br><span style="font-size:12px;color:var(--accent)" onclick="event.stopPropagation();startConv('${sk}')">${t.skipToConv}</span></button>`;
+    h+=`<div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:10px;background:#fff">
+      <div style="cursor:pointer" onclick="startSkill('${sk}')">
+        <b style="color:var(--accent)">${SKILLS[sk]}</b> · ${items.length}${t.items}${t.plusConv}${done?`${t.doneN}${done}`:''}
+        <div style="font-size:13px;color:var(--sub);margin-top:4px">${SKILL_INTRO[sk].def}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startSkill('${sk}')">${t.startPractice}</button>
+        <button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startConv('${sk}')">${t.convNow}</button>
+      </div></div>`;
   }
   h+=`<div style="margin-top:20px;border-top:1px dashed var(--line);padding-top:12px">
     <span class="sub" style="font-size:12px">${t.scaLine}
@@ -411,6 +423,7 @@ function startSkill(sk){
     ${demoHtml}
     <p class="sub" style="font-size:12px;margin-top:12px">${t.placeholderNote}</p>
     <button onclick="showItem()">${t.startPractice}（${queue.length}${t.items}）</button>
+    <button class="ghost" onclick="startConv('${sk}')">${t.jumpConv}</button>
     <button class="ghost" onclick="home()">${t.back}</button></div>`;
 }
 function showItem(){
@@ -425,7 +438,11 @@ function sideRef(){
       <div class="who">${t.clientSaid}${esc2(d.c)}</div>
       <div style="margin-top:4px"><span class="badge ${d.tag==='good'?'hit':'miss'}">${d.tag==='good'?t.refGood:t.refBad}</span> ${esc2(d.r)}</div>
     </div>`).join('');
-  return `<div class="card">
+  return `<div class="card" style="border-color:var(--accent)">
+    <button onclick="startConv('${cur.skill}')" style="width:100%;margin-top:0;font-size:14px;padding:8px 12px">${t.jumpConv}</button>
+    <div class="sub" style="font-size:12px;margin-top:6px;text-align:center">${t.jumpConvNote}</div>
+  </div>
+  <div class="card">
     <h4>${t.refTitle} · ${s.name}</h4>
     <div class="b">${s.def}</div>
     <details open><summary>${t.refCrit}</summary>
