@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>REFLECT · MVP</title>
+<style>
+  :root{--ink:#1a1a1a;--sub:#6b6b6b;--line:#e5e2dc;--bg:#faf9f7;--card:#ffffff;
+        --hit:#2e7d32;--hitbg:#eaf4ea;--partial:#b26a00;--partialbg:#fdf3e3;--miss:#b3372e;--missbg:#fbecea;
+        --accent:#3d5a80;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Songti SC","Noto Serif CJK SC",serif;background:var(--bg);color:var(--ink);line-height:1.75}
+  .wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:20px;margin-bottom:4px}
+  .sub{color:var(--sub);font-size:13px;margin-bottom:28px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin-bottom:16px}
+  .tag{display:inline-block;font-size:12px;color:var(--accent);border:1px solid var(--accent);
+       border-radius:99px;padding:1px 10px;margin-bottom:10px}
+  .bg{color:var(--sub);font-size:13px;margin-bottom:10px}
+  .ctx{color:var(--sub);font-size:14px;white-space:pre-line;border-left:3px solid var(--line);
+       padding-left:12px;margin-bottom:14px}
+  .utt{font-size:16px;background:var(--bg);border-radius:8px;padding:14px 16px}
+  label{font-size:13px;color:var(--sub);display:block;margin:16px 0 6px}
+  textarea{width:100%;min-height:90px;font:inherit;font-size:15px;padding:12px;border:1px solid var(--line);
+           border-radius:8px;resize:vertical;background:#fff}
+  textarea:focus{outline:none;border-color:var(--accent)}
+  .rate{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .rate input{flex:1}
+  .rate span{font-variant-numeric:tabular-nums;width:2em;text-align:center}
+  button{font:inherit;font-size:15px;padding:9px 22px;border-radius:8px;border:1px solid var(--accent);
+         background:var(--accent);color:#fff;cursor:pointer;margin-top:14px}
+  button.ghost{background:#fff;color:var(--accent)}
+  button:disabled{opacity:.5;cursor:wait}
+  .fb{border-radius:10px;padding:18px 20px;margin-top:16px;border:1px solid var(--line)}
+  .fb.hit{background:var(--hitbg)}  .fb.partial{background:var(--partialbg)}  .fb.miss{background:var(--missbg)}
+  .verdict{font-weight:700;font-size:15px;margin-bottom:8px}
+  .hit .verdict{color:var(--hit)} .partial .verdict{color:var(--partial)} .miss .verdict{color:var(--miss)}
+  .fb dl{font-size:14px}
+  .fb dt{color:var(--sub);font-size:12px;margin-top:8px}
+  .fb dd{margin:1px 0 0}
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px}
+  .dots{display:flex;gap:6px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+  .dot.cur{background:var(--accent)} .dot.done{background:var(--hit)}
+  .home button{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);
+               border:1px solid var(--line);padding:16px 18px;margin-top:10px}
+  .home button:hover{border-color:var(--accent)}
+  .home b{color:var(--accent)}
+  .spin{color:var(--sub);font-size:14px;margin-top:14px;display:none}
+  .err{color:var(--miss);font-size:14px;margin-top:10px}
+  .chat{display:flex;flex-direction:column;gap:10px;margin:14px 0;max-height:420px;overflow-y:auto;padding-right:4px}
+  .msg{max-width:82%;padding:10px 14px;border-radius:12px;font-size:15px;line-height:1.7}
+  .msg.client{background:var(--bg);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.me{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.typing{color:var(--sub);font-style:italic;background:none;border:none}
+  .convbar{display:flex;gap:10px;align-items:flex-end}
+  .convbar textarea{flex:1;min-height:56px}
+  .moment{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:12px}
+  .moment .reveal{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .moment.open .reveal{display:block}
+  .selfjudge{display:flex;gap:8px;margin-top:10px}
+  .selfjudge button{font-size:13px;padding:5px 14px;border-radius:99px}
+  .sumbox{background:var(--bg);border-radius:10px;padding:14px 18px;margin-top:14px;font-size:14px}
+  .sumbox dt{color:var(--sub);font-size:12px;margin-top:8px}
+  .polish{border:1px dashed var(--accent);border-radius:10px;padding:12px 14px;margin-top:10px;font-size:14px;background:#f6f8fb}
+  .polish .pr{color:var(--sub);font-size:12px;margin-top:6px}
+  .polish button{font-size:13px;padding:5px 14px;margin-top:8px;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="appTitle">REFLECT 反映式倾听练习</h1>
+  <div class="sub" id="appSub">MVP · 先自答，再看反馈，然后修改重写（每题最多 3 次）</div>
+  <div id="app"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+let LANG=localStorage.getItem('psyclient_lang')||'zh';
+const T={
+ zh:{title:'REFLECT 反映式倾听练习',sub:'MVP · 先自答，再看反馈，然后修改重写（每题最多 3 次）',
+  who:'你是谁？',whoHint:'输入姓名或学号——你的练习记录将归到这个名字下。',namePh:'姓名或学号',start:'开始',
+  cur:'当前学员：',switch:'切换',pick:'选择本周模块：',items:'题',plusConv:' + 对话练习',doneN:' · 已完成 ',
+  skipToConv:'↳ 跳过题目，直接开始对话练习',
+  scaLine:'标准化评估（SCA）——由主试安排时进入，日常练习无需点击：',formA:'A 卷',formB:'B 卷',
+  goalBanner:'本周练习方向',goalFrom:'（来自上次复盘）',
+  demoTitle:'示范与定义',criteria:'技术标准',criteriaNote:'——练习与反馈都对着这三条',
+  howto:'怎么做',pitfalls:'最容易滑向的偏离',demos:'对照示范',
+  placeholderNote:'注：本页教学内容为占位稿，正式版将替换为课程教材的定义与示例。',
+  startPractice:'开始练习',back:'返回',backList:'返回列表',
+  qOf:(a,b)=>`第 ${a}/${b} 题`,attempt:n=>`第 ${n} 次作答`,
+  respLabel:n=>`请用一句${n}回应他／她：`,
+  selfRate:'自评（可选）：你觉得这句反映的质量如何？',selfRateNote:'不评不影响练习',unrated:'未评',
+  submit:'提交，看反馈',grading:'督导批改中…',needResp:'先写下你的回应。',
+  vHit:'✓ 命中',vPartial:'◐ 部分命中',vMiss:'✗ 脱靶',
+  captured:'你接住了',stillMiss:'还差在哪',noteIf:'可留意',comment:'督导点评',
+  hintMore:'更进一步（选做）',hintFix:'改写方向',
+  retry:n=>`修改重写（第 ${n} 次）`,next:'下一题',
+  affectPre:'语气：',lv:{1:'初级',2:'中级',3:'高级'},
+  diffTitle:l=>`${l}题组完成 · 难度自评`,diffQ:'刚才这组题对你来说——',
+  tooEasy:'太容易',good:'正好有挑战',tooHard:'太难了',
+  dpNote:'刻意练习原则：正好的挑战值得重复；太容易就前进；太难就退回打牢。',
+  msgGood:'不错——这个难度值得再练一组巩固，也可以直接前进。',
+  msgHard:'没关系，建议把这一级再练一遍打牢，也可以先继续看看。',
+  redo:l=>`再练一组${l}`,goOn:'继续下一级',
+  finishTitle:'结构化练习完成。',
+  finishSub:'接下来与来访者做一段完整对话（10 轮左右）。对话中<b>没有任何提示与反馈</b>——像真实会谈一样；结束后一起复盘。',
+  startConv:'开始对话练习',backFirst:'先返回列表',
+  entering:'来访者进入咨询室…',convTag:(n,a,b)=>`对话练习 · ${n}为重点 · 第 ${a}/${b} 轮`,
+  typing:'来访者正在回应…',convPh:'像真实会谈一样回应…',send:'发送',polishBtn:'帮我改得更共情',
+  polishing:'润色中…',needDraft:'先写一句草稿，再请督导帮你润色。',
+  yourLine:'你这句：',polishOk:'这句已经不错，直接发吧。',suggest:'建议改为:',
+  usePolish:'用这句（仍可编辑）',keepMine:'保留我自己的',collapse:'收起',
+  canEnd:'已可结束会谈',needMore:n=>`至少 ${n} 轮后可结束`,endConv:'结束会谈，进入复盘',
+  keptRetry:'（内容已保留，可重发）',
+  debriefWait:'会谈结束，督导正在整理复盘（约 10–20 秒）…',
+  debriefTag:n=>`会谈复盘 · 共 ${n} 轮`,
+  cHit:'命中',cPartial:'部分',cMiss:'脱靶',
+  curveLabel:'来访者的被理解感走势：',curveNote:'（0–10，每个点是他说完一轮话时的感受）',
+  goalLookBack:'先回头看一眼',goalWas:'——上次复盘给你的方向是：',goalAsk:'这次会谈里，这个方向有进展吗？',
+  gYes:'有进展',gNo:'还没有',gMaybe:'说不好',
+  goalAfter:'下面是这次会谈的新方向——它会替换首页上的练习方向。',yourCall:'你的判断：',
+  smPattern:'命中模式',smDirection:'一个改进方向',smMoment:'关键时刻',
+  replayN:n=>`回放 ${n} 个时刻`,replayNote:'——先自己判断，再看来访者当时的内在状态',
+  youSaid:'你当时说：',caught:'你觉得这句接住了吗？',gotIt:'接住了',missedIt:'没接住',
+  stateWas:'来访者当时——表层：',stateEmo:'情绪：',stateMean:'未言明：',
+  fullLog:'完整对话回放',fullLogN:n=>`（${n} 轮，含逐轮判定）`,you:'你：',usedPolish:' · 用了润色',
+  againConv:'再练一次',
+  calPartial:'督导判的是"部分命中"——你的判断落在中间地带，看看下面差在哪一层。',
+  calSame:'你的判断和督导一致——对自己这句的感觉是准的。',
+  calDiff:'你的判断和督导不一致——这正是最值得看的时刻：对照下面的内在状态，找找感觉偏在哪。',
+  scaConfirm:f=>`即将开始标准化评估（${f} 卷）：共 10 轮回应，全程没有润色和反馈，中途请勿刷新页面。确认开始？`,
+  scaTag:(f,a,b)=>`标准化评估 · ${f} 卷 · 第 ${a}/${b} 轮`,
+  scaNote:n=>`评估会谈无润色、无反馈；共 ${n} 轮，回应发出后不可修改。`,
+  scaDone:'评估完成。',scaDoneSub:n=>`你的 ${n} 轮回应已全部记录。评估不提供即时反馈，结果由评分者另行评定。谢谢！`,
+  home:'返回首页',codeAsk:'访问口令',codeHint:'请输入主试提供的口令。',codeBad:'口令不对，再试一次。'},
+ en:{title:'REFLECT — Reflective Listening Practice',sub:'MVP · Answer first, then see feedback, then revise (up to 3 attempts per item)',
+  who:'Who are you?',whoHint:'Enter your name or student ID — your practice record will be filed under it.',namePh:'Name or student ID',start:'Start',
+  cur:'Trainee: ',switch:'switch',pick:'Choose this week\'s module:',items:' items',plusConv:' + conversation practice',doneN:' · done ',
+  skipToConv:'↳ Skip the items, go straight to conversation practice',
+  scaLine:'Standardised assessment (SCA) — enter only when your administrator asks you to:',formA:'Form A',formB:'Form B',
+  goalBanner:'Your focus this week',goalFrom:'(from your last debrief)',
+  demoTitle:'Worked examples and definition',criteria:'Skill criteria',criteriaNote:'— practice and feedback both address these three',
+  howto:'How to do it',pitfalls:'Where it most easily slips',demos:'Contrasting examples',
+  placeholderNote:'Note: this teaching content is a placeholder; the final version will use the definitions and examples from the course textbook.',
+  startPractice:'Start practising',back:'Back',backList:'Back to list',
+  qOf:(a,b)=>`item ${a}/${b}`,attempt:n=>`attempt ${n}`,
+  respLabel:n=>`Respond with one ${n}:`,
+  selfRate:'Self-rating (optional): how good was that reflection?',selfRateNote:'skipping it changes nothing',unrated:'not rated',
+  submit:'Submit for feedback',grading:'Supervisor is reading…',needResp:'Write your response first.',
+  vHit:'✓ Hit',vPartial:'◐ Partial',vMiss:'✗ Miss',
+  captured:'What you caught',stillMiss:'What was missing',noteIf:'Worth noting',comment:'Supervisor comment',
+  hintMore:'To go further (optional)',hintFix:'Direction for a rewrite',
+  retry:n=>`Revise and rewrite (attempt ${n})`,next:'Next item',
+  affectPre:'tone: ',lv:{1:'Beginner',2:'Intermediate',3:'Advanced'},
+  diffTitle:l=>`${l} set complete · difficulty check`,diffQ:'How was that set for you?',
+  tooEasy:'Too easy',good:'Right level of challenge',tooHard:'Too hard',
+  dpNote:'Deliberate-practice rule: the right challenge is worth repeating; too easy means move up; too hard means step back and consolidate.',
+  msgGood:'Good — this level is worth one more set, though you may also move on.',
+  msgHard:'That\'s fine. Running this level again would consolidate it, but you can also carry on and see.',
+  redo:l=>`One more ${l} set`,goOn:'Move to the next level',
+  finishTitle:'Structured practice complete.',
+  finishSub:'Next is a full conversation with the client (about 10 turns). During the conversation there are <b>no prompts and no feedback</b> — just like a real session; the debrief comes afterwards.',
+  startConv:'Start conversation practice',backFirst:'Back to the list for now',
+  entering:'The client is coming in…',convTag:(n,a,b)=>`Conversation practice · focus: ${n} · turn ${a}/${b}`,
+  typing:'The client is responding…',convPh:'Respond as you would in a real session…',send:'Send',polishBtn:'Help me make this more empathic',
+  polishing:'Working…',needDraft:'Write a draft first, then ask for a rewrite.',
+  yourLine:'Your line: ',polishOk:'This one is already good — send it.',suggest:'Suggested rewrite:',
+  usePolish:'Use this (still editable)',keepMine:'Keep mine',collapse:'Collapse',
+  canEnd:'You may end the session now',needMore:n=>`can end after ${n} turns`,endConv:'End session and debrief',
+  keptRetry:'(your text was kept — you can resend)',
+  debriefWait:'Session over. The supervisor is preparing your debrief (10–20 seconds)…',
+  debriefTag:n=>`Debrief · ${n} turns`,
+  cHit:'hits',cPartial:'partial',cMiss:'misses',
+  curveLabel:'How understood the client felt: ',curveNote:'(0–10; each point is how they felt at the end of a turn)',
+  goalLookBack:'First, a look back',goalWas:' — the direction from your last debrief was: ',goalAsk:'Did that move at all in this session?',
+  gYes:'Yes, it moved',gNo:'Not yet',gMaybe:'Hard to say',
+  goalAfter:'Below is the new direction from this session — it will replace the one on your home page.',yourCall:'Your call: ',
+  smPattern:'Pattern in your hits',smDirection:'One direction to work on',smMoment:'Key moment',
+  replayN:n=>`Replaying ${n} moments`,replayNote:'— judge for yourself first, then see the client\'s inner state at that moment',
+  youSaid:'What you said: ',caught:'Do you think that one landed?',gotIt:'It landed',missedIt:'It didn\'t',
+  stateWas:'At that moment — surface: ',stateEmo:'emotion: ',stateMean:'unspoken: ',
+  fullLog:'Full transcript',fullLogN:n=>` (${n} turns, with per-turn verdicts)`,you:'You: ',usedPolish:' · used the rewrite',
+  againConv:'Practise again',
+  calPartial:'The supervisor called this a partial hit — your judgment sits in between; look below for which layer fell short.',
+  calSame:'Your judgment matches the supervisor\'s — your read on your own line is accurate.',
+  calDiff:'Your judgment differs from the supervisor\'s — which makes this the moment worth studying. Compare the inner state below and find where your read drifted.',
+  scaConfirm:f=>`Starting standardised assessment (Form ${f}): 10 responses, no rewrites and no feedback throughout. Do not refresh the page. Begin?`,
+  scaTag:(f,a,b)=>`Standardised assessment · Form ${f} · turn ${a}/${b}`,
+  scaNote:n=>`No rewrites, no feedback in assessment; ${n} turns, and responses cannot be edited once sent.`,
+  scaDone:'Assessment complete.',scaDoneSub:n=>`All ${n} of your responses have been recorded. Assessments give no immediate feedback; results are rated separately. Thank you.`,
+  home:'Back to home',codeAsk:'Access code',codeHint:'Enter the code your administrator gave you.',codeBad:'Wrong code — try again.'}};
+let t=T[LANG];
+const VERDICT={hit:'✓ 命中',partial:'◐ 部分命中',miss:'✗ 脱靶'};
+const vLabel=v=>({hit:t.vHit,partial:t.vPartial,miss:t.vMiss}[v]||v);
+let ACCESS='';
+function api(path,opts){
+  opts=opts||{};opts.headers=Object.assign({'Content-Type':'application/json'},opts.headers||{});
+  if(ACCESS)opts.headers['X-Access-Code']=ACCESS;
+  return fetch(path,opts);
+}
+function switchLang(l){
+  LANG=l;localStorage.setItem('psyclient_lang',l);t=T[l];
+  document.getElementById('appTitle').textContent=t.title;
+  document.getElementById('appSub').textContent=t.sub;
+  boot();
+}
+const SKILL_INTRO_EN={
+ content:{name:'Content Reflection',
+   criteria:['Restate in your own words what the client said out loud — do not parrot it back verbatim','End on a statement, not a question','Include no advice, evaluation or new information'],
+   def:'Restate accurately, in your own words, what the client actually said — hand the facts back so they can confirm you heard. It is the floor every other listening skill stands on: clients only keep going once they know they were heard.',
+   why:'The novice impulse is to respond fast — advise, ask, diagnose. Content reflection asks you to do none of that and simply catch what was said. It looks trivial and it decides whether the client keeps talking.',
+   how:['Take the core facts and say them in your own words rather than replaying the sentence;','If they said several things, try to carry the main ones so they hear themselves whole;','End on a statement, not a question mark — a reflection says "I heard that", not "did I get it right?".'],
+   pitfalls:['Sliding into advice ("You could try...") — they have not been heard yet, so no solution will land;','Parroting — repeating the exact words sounds mechanical; restatement needs your own words;','Rushing to ask ("And then?" "Why?") — reflect first, everything else after.'],
+   demos:[
+     {c:"I worked three extra shifts this week, then it's homework with my kid at night, and now my mother is in hospital. I feel like I've been cut into pieces.",
+      r:"Three things pulling at once — the extra shifts, your kid's homework, your mother in hospital. You're being dragged in every direction.",tag:'good',note:'All three are caught, in the counsellor\'s own words ("dragged in every direction" answers "cut into pieces"), with no question and no fix.'},
+     {c:"I worked three extra shifts this week, then it's homework with my kid at night, and now my mother is in hospital. I feel like I've been cut into pieces.",
+      r:"Have you thought about hiring some help? Or asking your manager for fewer shifts?",tag:'bad',badtype:'Common departure · advice',note:'The plan may even be sound, but right now she needs to be heard. Once advice arrives, the rest of what she was going to say goes back down.'}]},
+ feeling:{name:'Reflection of Feeling',
+   criteria:['Name one specific emotion belonging to the client','Deliver it as a statement — you may leave room, but do not let it rise into a question','Include no reassurance, advice, or explaining a third party'],
+   def:"Name the client's emotion accurately in one sentence — the one they said and the one hiding in what they said — so the feeling is caught rather than left hanging.",
+   why:'People visibly exhale the moment a feeling is named precisely. Told vaguely that they are "upset", or hurried past with "don\'t worry about it", they put the feeling away. Reflection of feeling trains the accuracy of the naming.',
+   how:['Find the specific word: wronged, humiliated, suspended, hollow — the more specific the more it lands; "bad" and "uncomfortable" are too wide;','Tie the emotion to its situation ("Being told that in front of the whole group, you were humiliated") so it has somewhere to sit;','Match the intensity: if they are "a bit let down" do not say "devastated"; if they are devastated do not say "a bit down".'],
+   pitfalls:['Reassurance ("Don\'t take it to heart", "It\'ll get better") — this tells them the feeling need not exist;','Explaining a third party ("Your supervisor probably meant well") — the topic jumps instantly from their feeling to someone else\'s motives;','A word too wide ("You\'re pretty uncomfortable") — it fits anything, so it names nothing.'],
+   demos:[
+     {c:"My roommates use my stuff and never mention it. I brought it up once and they told me I was being petty.",
+      r:"You raise it and get called petty for it — that lands as unfair, like caring about it at all became your fault.",tag:'good',note:'"Unfair" is accurate, and the shape of the unfairness is named too: her reasonable objection got turned into the offence.'},
+     {c:"My roommates use my stuff and never mention it. I brought it up once and they told me I was being petty.",
+      r:"That's pretty normal between roommates, honestly. Don't let it get to you — I'm sure they don't mean anything by it.",tag:'bad',badtype:'Common departure · reassurance + explaining away',note:'Two departures stacked: the feeling is talked out of existence and the roommates are acquitted. She will not raise it again — with anyone.'}]},
+ meaning:{name:'Reflection of Meaning',
+   criteria:['Reach for the meaning, need or stake the client has not said outright','Offer it tentatively ("it sounds like", "it seems")','Pass no judgment, apply no labels, offer no interpretation'],
+   def:'Reflect the meaning and the need behind the emotion — what they care about, what this event means to them — reaching what is unsaid but already present in their words.',
+   why:'This is the deepest of the three. Done well, clients feel a jolt of being understood and often fall silent for a second before saying "...yes. Exactly." Overdone, it becomes an imposed interpretation. The line is this: say only what is already in their words, never what you deduced.',
+   how:['Listen for the stake behind the event: what they return to, where the voice shifts, where they trail off — the meaning is usually buried there;','Offer it tentatively — "it sounds like...", "it seems like..." — the opening lets them correct you;','Connect the emotion to the need ("It hurts because what you actually wanted was...") rather than stopping at the name of the feeling.'],
+   pitfalls:['Over-interpreting — narrating depths that are simply not in their words is speculation, not reflection;','Passing judgment ("You just haven\'t let it go") — judgment closes the conversation, tentativeness opens it;','Skipping the first two layers — going for meaning before content and feeling are caught leaves them feeling dissected rather than understood.'],
+   demos:[
+     {c:"Since my dad got sick I go back every weekend. But I sit there with nothing to say and end up on my phone.",
+      r:"You're there every week and still feel like you aren't really *there* — it sounds like what you want to give him isn't just presence but something closer, and you haven't found the way in.",tag:'good',note:'The phone tells him what the man actually wants: not to discharge a duty but to get closer. "It sounds like" keeps the door open throughout.'},
+     {c:"Since my dad got sick I go back every weekend. But I sit there with nothing to say and end up on my phone.",
+      r:"That's classic avoidant attachment — your early relationship with your father set the pattern you're both stuck in now.",tag:'bad',badtype:'Common departure · over-interpretation / labelling',note:'A living person has been filed into a term. Even if the analysis were right, at this moment it only produces defence — reflection means seeing it alongside them, not diagnosing on their behalf.'}]}};
+const SKILL_INTRO_ZH={
+ content:{name:'内容反映',
+   criteria:['用自己的话复述来访者说出口的内容，不逐字照搬','以陈述句结尾，不用问句','不包含建议、评价或新信息'],
+   def:'用自己的话准确复述来访者说出口的内容，把他说的事送回给他，让对方确认"你听清了"。它是一切倾听技术的地基：来访者只有确认被听清，才会继续往下说。',
+   why:'新手最常见的冲动是急着回应——给建议、问问题、找原因。内容反映要求你先什么都不做，只是把对方说的话接住。这一步看似简单，却直接决定来访者是否愿意继续开口。',
+   how:['抓住来访者话里的核心事实，用自己的话重述，而不是逐字复读；','来访者说了几件事，尽量把主要的都带到，让他听见完整的自己；','结尾用陈述，不用问号——反映是"我听到了"，不是"我猜对了吗"。'],
+   pitfalls:['滑向建议（"你可以试试……"）——他还没被听到，方案再好也接不住；','鹦鹉学舌——原句照搬会显得机械，重述要有自己的话；','急着追问（"然后呢？""为什么？"）——先反映，再谈别的。'],
+   demos:[
+     {c:'这周加了三天班，回家还得盯孩子作业，我妈又住院了，我感觉自己被切成好几块。',
+      r:'三头都压在你身上——加班、孩子的作业、妈妈住院，你被拽着到处跑。',tag:'good',note:'把三件事都接住了，用了自己的话（"被拽着到处跑"呼应"切成好几块"），没有追问也没有支招。'},
+     {c:'这周加了三天班，回家还得盯孩子作业，我妈又住院了，我感觉自己被切成好几块。',
+      r:'那你有没有想过请个护工？或者跟领导说说少排点班？',tag:'bad',badtype:'常见偏离 · 给建议',note:'方案也许有用，但此刻她要的是被听到。建议一出口，她剩下的话就咽回去了。'}]},
+ feeling:{name:'情感反映',
+   criteria:['命名一个指向来访者的具体情绪词','以陈述句给出，可留余地但不上扬成提问','不包含宽慰、建议或替第三方解释'],
+   def:'用一句话准确命名来访者的情绪——包括他说出口的和藏在话里的——让对方感到"这份情绪被接住了"。',
+   why:'情绪被准确命名的那一刻，人会明显松一口气；被泛泛地说"你很难受"，或被急忙安慰"别想太多"，人会把情绪收回去。情感反映练的就是命名的准确度。',
+   how:['找具体的情绪词：委屈、难堪、悬着、空落——越具体越有命中感，"难受""不舒服"太泛；','把情绪和它的情境连起来说（"当着全组人被那样说，你特别难堪"），情绪才落得住；','强度要对得上：对方是"有点失落"就别说"崩溃"，对方是"崩溃"也别说"有点不开心"。'],
+   pitfalls:['宽慰（"别太在意""会好起来的"）——等于告诉对方这情绪不必存在；','替第三方解释（"老师可能是为你好"）——话题瞬间从他的感受转到别人的动机；','情绪词太泛（"你挺不舒服的"）——什么都能套，等于没命名。'],
+   demos:[
+     {c:'室友用完我的东西从来不说，我提了一次，她们反而说我小气。',
+      r:'提出来反而被说小气，你觉得挺委屈的，好像在意这件事本身成了你的错。',tag:'good',note:'"委屈"命名准确，还点出了委屈的结构——她的合理在意被反过来定了罪。'},
+     {c:'室友用完我的东西从来不说，我提了一次，她们反而说我小气。',
+      r:'室友之间难免的啦，别放在心上，大家没有恶意的。',tag:'bad',badtype:'常见偏离 · 宽慰＋替人解释',note:'两个偏离叠在一起：情绪被劝退，室友被开脱。她下次不会再提这件事了——对谁都不提。'}]},
+ meaning:{name:'意义反映',
+   criteria:['猜测来访者未明说的意义、需要或在乎','以试探性陈述给出（"好像""听起来"）','不下判断、不贴标签、不给解释'],
+   def:'反映来访者情绪背后的意义与需要——他在乎什么、这件事对他意味着什么——触及他尚未明说、但就在话里的东西。',
+   why:'这是三个技能里最深的一层。做得好，来访者会有"被懂了"的震动，常常沉默几秒然后说"……对，就是这样"；做过头，就成了强加解释。分寸在于：只说他话里已经有的，不说你推理出来的。',
+   how:['听"事情"背后的"在乎"：他反复提的、语气变化的、欲言又止的地方，往往埋着意义；','用试探性的语气端出来："好像……""听起来……""是不是……"——留白让他可以修正你；','连接情绪与需要（"你难过，是因为你想要的其实是……"），不止步于命名情绪。'],
+   pitfalls:['过度解释——说出他话里根本没有的深层心理，那是臆测不是反映；','下判断（"其实你就是没放下"）——判断关闭对话，试探打开对话；','跳过前两层——内容和情绪还没接住就直奔意义，对方会觉得被剖析而不是被理解。'],
+   demos:[
+     {c:'我爸生病之后，我每周都回去，可坐在那儿也不知道说什么，就刷手机。',
+      r:'你每周都到场，却觉得没真的"在"——好像你想给他的不只是人在，而是能靠近一点，只是还没找到路。',tag:'good',note:'从"刷手机"里听出了他真正的在乎：不是尽义务，是想靠近。全程用"好像"留着余地。'},
+     {c:'我爸生病之后，我每周都回去，可坐在那儿也不知道说什么，就刷手机。',
+      r:'你这是典型的回避型依恋，从小和父亲的关系模式决定了你们现在没法沟通。',tag:'bad',badtype:'常见偏离 · 过度解释／贴标签',note:'把活人装进了术语盒子。哪怕分析是对的，此刻它也只会让对方防御——反映是陪他看见，不是替他诊断。'}]}};
+const SKILL_INTRO_ALL={zh:SKILL_INTRO_ZH,en:SKILL_INTRO_EN};
+let SKILL_INTRO=SKILL_INTRO_ALL[LANG];
+let ITEMS=[],SKILLS={},cur=null,attempt=1,results={},RATE_TOUCHED=false;
+let USER=localStorage.getItem('psyclient_user')||'';
+let GOAL=null;
+
+async function loadGoal(){
+  if(!USER){GOAL=null;return;}
+  try{const r=await api('/api/goal?user='+encodeURIComponent(USER));const d=await r.json();GOAL=d.goal||null;}
+  catch(e){GOAL=null;}
+}
+function goalLine(){
+  return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${t.goalFrom}：${esc2(GOAL)}</div>`:'';
+}
+function langBar(){
+  return `<div style="text-align:right;font-size:12px;margin-bottom:8px">
+    <a href="#" style="color:${LANG==='zh'?'var(--accent)':'var(--sub)'};font-weight:${LANG==='zh'?'700':'400'}" onclick="switchLang('zh');return false">中文</a>
+    <span style="color:var(--line)"> | </span>
+    <a href="#" style="color:${LANG==='en'?'var(--accent)':'var(--sub)'};font-weight:${LANG==='en'?'700':'400'}" onclick="switchLang('en');return false">English</a></div>`;
+}
+async function boot(){
+  SKILL_INTRO=SKILL_INTRO_ALL[LANG];
+  ACCESS=ACCESS||localStorage.getItem('psyclient_code')||'';
+  let r=await api('/api/items?lang='+LANG);
+  if(r.status===401){return askCode();}
+  const d=await r.json();
+  ITEMS=d.items;SKILLS=d.skills;
+  if(!USER){askUser();}else{await loadGoal();home();}
+}
+function askCode(bad){
+  $('#app').innerHTML=`${langBar()}<div class="card"><b>${t.codeAsk}</b>
+    <p class="sub" style="margin-top:6px">${t.codeHint}</p>
+    <input id="ucode" type="password" style="width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px" placeholder="${t.codeAsk}">
+    ${bad?`<div class="err">${t.codeBad}</div>`:''}
+    <button onclick="setCode()">${t.start}</button></div>`;
+  const i=$('#ucode');i.focus();
+  i.addEventListener('keydown',e=>{if(e.key==='Enter')setCode();});
+}
+async function setCode(){
+  const v=$('#ucode').value.trim();
+  if(!v)return;
+  ACCESS=v;
+  const r=await api('/api/items?lang='+LANG);
+  if(r.status===401){ACCESS='';return askCode(true);}
+  localStorage.setItem('psyclient_code',v);
+  boot();
+}
+function askUser(){
+  $('#app').innerHTML=`${langBar()}<div class="card"><b>${t.who}</b>
+    <p class="sub" style="margin-top:6px">${t.whoHint}</p>
+    <input id="uname" style="width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px" placeholder="${t.namePh}" value="${USER}">
+    <button onclick="setUser()">${t.start}</button></div>`;
+  const i=$('#uname');i.focus();
+  i.addEventListener('keydown',e=>{if(e.key==='Enter')setUser();});
+}
+async function setUser(){
+  const v=$('#uname').value.trim();
+  if(!v)return;
+  USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();home();
+}
+function home(){
+  const bySkill={};ITEMS.forEach(it=>{(bySkill[it.skill]=bySkill[it.skill]||[]).push(it)});
+  let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}</div>`;
+  for(const [sk,items] of Object.entries(bySkill)){
+    const done=items.filter(i=>results[i.id]).length;
+    h+=`<button onclick="startSkill('${sk}')"><b>${SKILLS[sk]}</b> · ${items.length}${t.items}${t.plusConv}${done?`${t.doneN}${done}`:''}<br><span style="font-size:13px;color:var(--sub)">${SKILL_INTRO[sk].def}</span><br><span style="font-size:12px;color:var(--accent)" onclick="event.stopPropagation();startConv('${sk}')">${t.skipToConv}</span></button>`;
+  }
+  h+=`<div style="margin-top:20px;border-top:1px dashed var(--line);padding-top:12px">
+    <span class="sub" style="font-size:12px">${t.scaLine}
+    <a href="#" style="color:var(--accent)" onclick="startSCA('A');return false">${t.formA}</a> ·
+    <a href="#" style="color:var(--accent)" onclick="startSCA('B');return false">${t.formB}</a></span></div>`;
+  h+='</div>';$('#app').innerHTML=h;
+}
+let queue=[],qi=0;
+const LV=n=>t.lv[n]||'';
+function startSkill(sk){
+  queue=ITEMS.filter(i=>i.skill===sk).sort((a,b)=>(a.level||2)-(b.level||2));qi=0;
+  const s=SKILL_INTRO[sk];
+  const demoHtml=s.demos.map(d=>`
+    <div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px">
+      <div class="ctx" style="margin-bottom:8px">来访者：${d.c}</div>
+      <div style="font-size:14px"><span style="font-size:12px;padding:1px 8px;border-radius:99px;${d.tag==='good'?'background:var(--hitbg);color:var(--hit)':'background:var(--missbg);color:var(--miss)'}">${d.tag==='good'?(LANG==='en'?'A better reflection':'较好的反映'):d.badtype}</span></div>
+      <div style="font-size:15px;margin:6px 0">${d.r}</div>
+      <div class="sub" style="font-size:13px;margin-bottom:0">${d.note}</div>
+    </div>`).join('');
+  $('#app').innerHTML=`<div class="card"><span class="tag">${s.name} · ${t.demoTitle}</span>
+    <p style="margin-bottom:8px"><b>${s.def}</b></p>
+    <p class="sub" style="font-size:14px;margin-bottom:14px">${s.why}</p>
+    <div style="font-size:14px"><b>${t.criteria}</b><span class="sub" style="font-size:12px">${t.criteriaNote}</span></div>
+    <ul style="font-size:14px;margin:4px 0 12px 20px">${s.criteria.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
+    <div style="font-size:14px"><b>${t.howto}</b></div>
+    <ul style="font-size:14px;margin:4px 0 12px 20px">${s.how.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
+    <div style="font-size:14px"><b>${t.pitfalls}</b></div>
+    <ul style="font-size:14px;margin:4px 0 14px 20px">${s.pitfalls.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
+    <div style="font-size:14px"><b>${t.demos}</b></div>
+    ${demoHtml}
+    <p class="sub" style="font-size:12px;margin-top:12px">${t.placeholderNote}</p>
+    <button onclick="showItem()">${t.startPractice}（${queue.length}${t.items}）</button>
+    <button class="ghost" onclick="home()">${t.back}</button></div>`;
+}
+function showItem(){
+  if(qi>=queue.length){return finish();}
+  cur=queue[qi];attempt=1;
+  render();
+}
+function render(prevResp){
+  RATE_TOUCHED=false;
+  const s=SKILL_INTRO[cur.skill];
+  $('#app').innerHTML=`
+  <div class="card">
+    ${goalLine()}
+    <span class="tag">${s.name} · ${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
+    <div class="bg">${cur.background}</div>
+    <div class="ctx">${cur.context.replace(/\n/g,'<br>')}</div>
+    <div class="utt">${cur.affect?`<span class="sub" style="font-size:12px">〔${t.affectPre}${cur.affect}〕</span><br>`:''}${cur.utterance}</div>
+    <label>${t.respLabel(s.name)}</label>
+    <textarea id="resp">${prevResp||''}</textarea>
+    <label>${t.selfRate}<span class="sub" style="font-size:12px"> ${t.selfRateNote}</span></label>
+    <div class="rate"><span>0</span><input id="rate" type="range" min="0" max="10" value="5"
+      oninput="RATE_TOUCHED=true;$('#rateV').textContent=this.value"><span>10</span><span id="rateV" style="color:var(--sub)">${t.unrated}</span></div>
+    <button id="go" onclick="submit()">${t.submit}</button>
+    <div class="spin" id="spin">${t.grading}</div>
+    <div id="fb"></div>
+    <div class="nav"><div class="dots">${queue.map((q,i)=>`<div class="dot ${i<qi?'done':i===qi?'cur':''}"></div>`).join('')}</div>
+    <div></div></div>
+  </div>`;
+}
+async function submit(){
+  const resp=$('#resp').value.trim();
+  if(!resp){$('#fb').innerHTML=`<div class="err">${t.needResp}</div>`;return;}
+  $('#go').disabled=true;$('#spin').style.display='block';$('#fb').innerHTML='';
+  try{
+    const r=await api('/api/feedback',{method:'POST',
+      body:JSON.stringify({item_id:cur.id,response:resp,attempt,self_rating:RATE_TOUCHED?+$('#rate').value:null,user:USER,lang:LANG})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'请求失败');
+    showFeedback(d.feedback,resp);
+  }catch(e){
+    $('#fb').innerHTML=`<div class="err">${e.message}（可重试）</div>`;
+  }finally{$('#go').disabled=false;$('#spin').style.display='none';}
+}
+function showFeedback(f,resp){
+  const v=f.verdict;
+  results[cur.id]=v;
+  const rows=[];
+  if(f.captured)rows.push([t.captured,f.captured]);
+  if(f.missed)rows.push([v==='hit'?t.noteIf:t.stillMiss,f.missed]);
+  if(f.comment)rows.push([t.comment,f.comment]);
+  if(f.rewrite_hint)rows.push([v==='hit'?t.hintMore:t.hintFix,f.rewrite_hint]);
+  const canRetry=attempt<3&&v!=='hit';
+  $('#fb').innerHTML=`<div class="fb ${v}"><div class="verdict">${vLabel(v)}</div>
+    <dl>${rows.map(([a,c])=>`<dt>${a}</dt><dd>${c}</dd>`).join('')}</dl>
+    ${canRetry?`<button onclick="retry('${encodeURIComponent(resp)}')">${t.retry(attempt+1)}</button>`:''}
+    <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button></div>`;
+  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}
+function retry(prev){attempt++;render(decodeURIComponent(prev));}
+function next(){
+  const curLv=queue[qi]?queue[qi].level:null;
+  const nextLv=queue[qi+1]?queue[qi+1].level:null;
+  qi++;
+  if(curLv&&nextLv&&nextLv>curLv){return diffCheck(curLv,nextLv);}
+  showItem();
+}
+function diffCheck(lv,nextLv){
+  $('#app').innerHTML=`<div class="card"><span class="tag">${t.diffTitle(LV(lv))}</span>
+    <p style="margin:10px 0">${t.diffQ}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="diffAns('${lv}','too_easy')">${t.tooEasy}</button>
+      <button onclick="diffAns('${lv}','good')">${t.good}</button>
+      <button class="ghost" onclick="diffAns('${lv}','too_hard')">${t.tooHard}</button>
+    </div>
+    <p class="sub" style="font-size:12px;margin-top:12px">${t.dpNote}</p>
+    <div id="diffnext"></div></div>`;
+}
+function diffAns(lv,ans){
+  api('/api/annotate',{method:'POST',
+    body:JSON.stringify({key:'diffcheck:'+(cur?cur.skill:'')+':L'+lv,agree:true,note:'难度自评:'+ans,user:USER})}).catch(()=>{});
+  const redo=()=>{const sk=queue[0].skill;const lvItems=ITEMS.filter(i=>i.skill===sk&&i.level==lv);queue.splice(qi,0,...lvItems);showItem();};
+  if(ans==='too_easy'){showItem();return;}
+  const msg=ans==='good'?t.msgGood:t.msgHard;
+  $('#diffnext').innerHTML=`<p class="sub" style="margin-top:12px">${msg}</p>
+    <button onclick="(${redo.toString()})()">${t.redo(LV(lv))}</button>
+    <button class="ghost" onclick="showItem()">${t.goOn}</button>`;
+}
+function finish(){
+  const sk=queue[0].skill;
+  $('#app').innerHTML=`<div class="card"><b>${t.finishTitle}</b>
+    <p class="sub" style="margin-top:8px">${t.finishSub}</p>
+    <button onclick="startConv('${sk}')">${t.startConv}</button>
+    <button class="ghost" onclick="home()">${t.backFirst}</button></div>`;
+}
+
+/* ================= 对话练习 ================= */
+let CONV=null;
+async function startConv(sk){
+  $('#app').innerHTML=`<div class="card"><div class="spin" style="display:block">${t.entering}</div></div>`;
+  try{
+    const r=await api('/api/conv_start',{method:'POST',
+      body:JSON.stringify({skill:sk,user:USER,lang:LANG})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'start failed');
+    CONV={sid:d.session_id,skill:sk,turn:0,min:d.min_turns,max:d.max_turns,canEnd:false,msgs:[{role:'client',text:d.client_text}],bg:d.background};
+    drawConv();
+  }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">返回</button></div>`;}
+}
+function drawConv(busy){
+  const s=SKILL_INTRO[CONV.skill];
+  $('#app').innerHTML=`<div class="card">
+    ${goalLine()}
+    <span class="tag">${t.convTag(s.name,CONV.turn,CONV.max)}</span>
+    <div class="bg">${CONV.bg}</div>
+    <div class="chat" id="chat">${CONV.msgs.map(m=>`<div class="msg ${m.role==='client'?'client':'me'}">${esc2(m.text)}</div>`).join('')}
+      ${busy?`<div class="msg typing">${t.typing}</div>`:''}</div>
+    <div class="convbar">
+      <textarea id="cresp" placeholder="${t.convPh}" ${busy?'disabled':''}></textarea>
+      <div style="display:flex;flex-direction:column">
+        <button id="csend" onclick="convSend()" ${busy?'disabled':''}>${t.send}</button>
+        <button class="ghost" id="cpolish" onclick="convPolish()" ${busy?'disabled':''} style="margin-top:6px;font-size:13px;padding:6px 12px">${t.polishBtn}</button>
+      </div>
+    </div>
+    <div id="polishbox"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px">
+      <span class="sub" style="font-size:12px">${CONV.canEnd?t.canEnd:t.needMore(CONV.min)}</span>
+      <button class="ghost" onclick="convEnd()" ${CONV.canEnd&&!busy?'':'disabled'}>${t.endConv}</button>
+    </div>
+    <div id="cerr"></div></div>`;
+  const c=$('#chat');c.scrollTop=c.scrollHeight;
+  const ta=$('#cresp'); if(ta&&!busy){ta.focus();ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();convSend();}});}
+}
+async function convSend(){
+  const txt=$('#cresp').value.trim();
+  if(!txt)return;
+  CONV.msgs.push({role:'me',text:txt});CONV.turn++;drawConv(true);
+  try{
+    const r=await api('/api/conv_reply',{method:'POST',
+      body:JSON.stringify({session_id:CONV.sid,response:txt})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'request failed');
+    if(d.ended){return convEnd();}
+    CONV.canEnd=!!d.can_end;
+    CONV.msgs.push({role:'client',text:d.client_text});
+    drawConv();
+  }catch(e){
+    CONV.msgs.pop();CONV.turn--;drawConv();
+    $('#cerr').innerHTML=`<div class="err">${e.message}${t.keptRetry}</div>`;
+    $('#cresp').value=txt;
+  }
+}
+async function convPolish(){
+  const draft=$('#cresp').value.trim();
+  if(!draft){$('#cerr').innerHTML=`<div class="err">${t.needDraft}</div>`;return;}
+  $('#cpolish').disabled=true;$('#cpolish').textContent=t.polishing;
+  try{
+    const r=await api('/api/conv_polish',{method:'POST',
+      body:JSON.stringify({session_id:CONV.sid,draft})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'rewrite failed');
+    if(d.unchanged){
+      $('#polishbox').innerHTML=`<div class="polish">
+        ${d.analysis?`<div style="margin-bottom:6px"><b>${t.yourLine}</b>${esc2(d.analysis)}</div>`:''}
+        ${t.polishOk}<div class="pr">${esc2(d.rationale||'')}</div>
+        <button class="ghost" onclick="$('#polishbox').innerHTML=''">${t.collapse}</button></div>`;
+    }else{
+      $('#polishbox').innerHTML=`<div class="polish">
+        ${d.analysis?`<div style="margin-bottom:8px"><b>${t.yourLine}</b>${esc2(d.analysis)}</div>`:''}
+        <b>${t.suggest}</b> ${esc2(d.suggestion)}
+        <div class="pr">${esc2(d.rationale||'')}</div>
+        <button onclick="usePolish(this.dataset.s)" data-s="${esc2(d.suggestion).replace(/"/g,'&quot;')}">${t.usePolish}</button>
+        <button class="ghost" onclick="$('#polishbox').innerHTML=''">${t.keepMine}</button></div>`;
+    }
+  }catch(e){$('#cerr').innerHTML=`<div class="err">${e.message}</div>`;}
+  finally{$('#cpolish').disabled=false;$('#cpolish').textContent=t.polishBtn;}
+}
+function usePolish(s){
+  const ta=$('#cresp');ta.value=s;$('#polishbox').innerHTML='';ta.focus();
+}
+async function convEnd(){
+  $('#app').innerHTML=`<div class="card"><div class="spin" style="display:block">${t.debriefWait}</div></div>`;
+  try{
+    const r=await api('/api/conv_end',{method:'POST',
+      body:JSON.stringify({session_id:CONV.sid})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'debrief failed');
+    drawDebrief(d);
+  }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">${t.back}</button></div>`;}
+}
+let DEBRIEF=null;
+function sparkline(vals){
+  if(!vals||vals.length<2)return '';
+  const w=Math.min(320,vals.length*36),hh=44,pad=6;
+  const xs=i=>pad+i*(w-2*pad)/(vals.length-1);
+  const ys=v=>hh-pad-(v/10)*(hh-2*pad);
+  const pts=vals.map((v,i)=>`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+  const dots=vals.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3" fill="${v>=7?'var(--hit)':v<=3?'var(--miss)':'var(--accent)'}"><title>${v}</title></circle>`).join('');
+  return `<svg width="${w}" height="${hh}" style="vertical-align:middle"><polyline points="${pts}" fill="none" stroke="var(--line)" stroke-width="2"/>${dots}</svg>`;
+}
+function drawDebrief(d){
+  DEBRIEF=d;
+  loadGoal();  // 服务器已把本次改进方向存为新目标，刷新置顶横幅
+  const vc={hit:0,partial:0,miss:0};d.verdicts.forEach(v=>{if(vc[v]!==undefined)vc[v]++;});
+  const sm=d.summary||{};
+  const VB=v=>`<span style="font-size:12px;padding:1px 8px;border-radius:99px;${v==='hit'?'background:var(--hitbg);color:var(--hit)':v==='partial'?'background:var(--partialbg);color:var(--partial)':'background:var(--missbg);color:var(--miss)'}">${{hit:t.cHit,partial:t.cPartial,miss:t.cMiss}[v]||v}</span>`;
+  $('#app').innerHTML=`<div class="card">
+    <span class="tag">${t.debriefTag(d.turns)}</span>
+    <div class="sub" style="margin-bottom:6px">${t.cHit} ${vc.hit} · ${t.cPartial} ${vc.partial} · ${t.cMiss} ${vc.miss}</div>
+    ${d.understood_curve&&d.understood_curve.length>1?`<div style="font-size:13px;color:var(--sub);margin:4px 0 10px">${t.curveLabel}${sparkline(d.understood_curve)}<span style="font-size:12px">${t.curveNote}</span></div>`:''}
+    ${d.prev_goal?`<div id="goalcheck" style="font-size:14px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:12px 14px;margin:8px 0">
+      <b>${t.goalLookBack}</b>${t.goalWas}<i>${esc2(d.prev_goal)}</i><br>${t.goalAsk}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button style="font-size:13px;padding:5px 14px;margin-top:0" onclick="goalProgress('${t.gYes}')">${t.gYes}</button>
+        <button style="font-size:13px;padding:5px 14px;margin-top:0" onclick="goalProgress('${t.gNo}')">${t.gNo}</button>
+        <button class="ghost" style="font-size:13px;padding:5px 14px;margin-top:0" onclick="goalProgress('${t.gMaybe}')">${t.gMaybe}</button>
+      </div></div>`:''}
+    <div class="sumbox"><dt>${t.smPattern}</dt><dd>${esc2(sm.pattern||'—')}</dd>
+      <dt>${t.smDirection}</dt><dd>${esc2(sm.direction||'—')}</dd>
+      ${sm.moment?`<dt>${t.smMoment}</dt><dd>${esc2(sm.moment)}</dd>`:''}</div>
+    <div style="margin-top:16px"><b>${t.replayN(d.moments.length)}</b>
+      <span class="sub" style="font-size:12px">${t.replayNote}</span></div>
+    ${d.moments.map((m,i)=>`<div class="moment" id="m${i}">
+      <div class="utt" style="font-size:14px">${esc2(m.client)}</div>
+      <div class="resp" style="margin-top:8px">${t.youSaid}${esc2(m.response)}</div>
+      <div class="selfjudge" id="sj${i}">
+        <span class="sub" style="font-size:13px;align-self:center">${t.caught}</span>
+        <button onclick="revealMoment(${i},'hit')">${t.gotIt}</button>
+        <button onclick="revealMoment(${i},'miss')">${t.missedIt}</button>
+      </div>
+      <div class="reveal">
+        <div id="cal${i}"></div>
+        <div class="fbrow sub" style="font-size:13px;margin-top:6px">${t.stateWas}${esc2(m.surface)}<br>${t.stateEmo}${esc2(m.emotions)}<br>${t.stateMean}${esc2(m.meaning)}</div>
+        <div style="margin-top:8px" class="fb ${m.feedback?m.feedback.verdict:''}" >
+          <div class="verdict" style="font-size:14px">${m.feedback?vLabel(m.feedback.verdict):''}</div>
+          <div style="font-size:13px">${esc2(m.feedback?m.feedback.comment:'')}</div>
+        </div>
+      </div></div>`).join('')}
+    ${d.transcript&&d.transcript.length?`<details style="margin-top:16px"><summary style="cursor:pointer;font-size:14px"><b>${t.fullLog}</b>${t.fullLogN(d.transcript.length)}</summary>
+      <div style="margin-top:10px">${d.transcript.map(x=>`
+        <div style="margin-bottom:12px">
+          <div class="utt" style="font-size:13px">${esc2(x.client)}</div>
+          <div style="font-size:14px;margin-top:4px">${t.you}${esc2(x.response)} ${VB(x.verdict)}${x.polish?`<span class="sub" style="font-size:11px">${t.usedPolish}</span>`:''}</div>
+        </div>`).join('')}</div></details>`:''}
+    <div style="display:flex;gap:10px">
+      <button style="margin-top:16px" onclick="startConv(CONV.skill)">${t.againConv}</button>
+      <button class="ghost" style="margin-top:16px" onclick="home()">${t.backList}</button>
+    </div></div>`;
+}
+function goalProgress(ans){
+  api('/api/annotate',{method:'POST',
+    body:JSON.stringify({key:'goalcheck:'+CONV.sid,agree:true,note:'goal progress:'+ans,user:USER})}).catch(()=>{});
+  $('#goalcheck').innerHTML=`<span class="sub" style="font-size:13px">${t.yourCall}${ans}. ${t.goalAfter}</span>`;
+}
+function revealMoment(i,guess){
+  const m=DEBRIEF.moments[i];
+  const v=m.feedback?m.feedback.verdict:null;
+  const label=guess==='hit'?t.gotIt:t.missedIt;
+  api('/api/annotate',{method:'POST',
+    body:JSON.stringify({key:'debrief:'+CONV.sid+':'+i,agree:true,note:'self-judge:'+guess+'|verdict:'+v,user:USER})}).catch(()=>{});
+  document.getElementById('m'+i).classList.add('open');
+  document.getElementById('sj'+i).innerHTML='<span class="sub" style="font-size:13px">'+t.yourCall+label+'</span>';
+  const consistent=(v==='hit'&&guess==='hit')||(v==='miss'&&guess==='miss');
+  const el=document.getElementById('cal'+i);
+  if(v==='partial'){
+    el.innerHTML=`<div style="font-size:13px;color:var(--partial)">${t.calPartial}</div>`;
+  }else{
+    el.innerHTML=consistent
+      ?`<div style="font-size:13px;color:var(--hit)">${t.calSame}</div>`
+      :`<div style="font-size:13px;color:var(--miss)">${t.calDiff}</div>`;
+  }
+}
+/* ================= SCA 标准化评估 ================= */
+let SCA=null;
+async function startSCA(form){
+  if(!confirm(t.scaConfirm(form)))return;
+  $('#app').innerHTML=`<div class="card"><div class="spin" style="display:block">${t.entering}</div></div>`;
+  try{
+    const r=await api('/api/sca_start',{method:'POST',
+      body:JSON.stringify({form,user:USER,lang:LANG})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'start failed');
+    SCA={sid:d.session_id,form,turn:0,total:d.total,msgs:[{role:'client',text:d.client_text}],bg:d.background};
+    drawSCA();
+  }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">${t.back}</button></div>`;}
+}
+function drawSCA(busy){
+  $('#app').innerHTML=`<div class="card">
+    <span class="tag">${t.scaTag(SCA.form,SCA.turn,SCA.total)}</span>
+    <div class="bg">${SCA.bg}</div>
+    <div class="chat" id="chat">${SCA.msgs.map(m=>`<div class="msg ${m.role==='client'?'client':'me'}">${esc2(m.text)}</div>`).join('')}
+      ${busy?`<div class="msg typing">${t.typing}</div>`:''}</div>
+    <div class="convbar">
+      <textarea id="sresp" placeholder="${t.convPh}" ${busy?'disabled':''}></textarea>
+      <button id="ssend" onclick="scaSend()" ${busy?'disabled':''}>${t.send}</button>
+    </div>
+    <div class="sub" style="font-size:12px;margin-top:8px">${t.scaNote(SCA.total)}</div>
+    <div id="serr"></div></div>`;
+  const c=$('#chat');c.scrollTop=c.scrollHeight;
+  const ta=$('#sresp'); if(ta&&!busy){ta.focus();ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();scaSend();}});}
+}
+async function scaSend(){
+  const txt=$('#sresp').value.trim();
+  if(!txt)return;
+  SCA.msgs.push({role:'me',text:txt});SCA.turn++;drawSCA(true);
+  try{
+    const r=await api('/api/sca_reply',{method:'POST',
+      body:JSON.stringify({session_id:SCA.sid,response:txt})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'request failed');
+    if(d.ended){return scaDone();}
+    SCA.msgs.push({role:'client',text:d.client_text});
+    drawSCA();
+  }catch(e){
+    SCA.msgs.pop();SCA.turn--;drawSCA();
+    $('#serr').innerHTML=`<div class="err">${e.message}${t.keptRetry}</div>`;
+    $('#sresp').value=txt;
+  }
+}
+function scaDone(){
+  $('#app').innerHTML=`<div class="card"><b>${t.scaDone}</b>
+    <p class="sub" style="margin-top:8px">${t.scaDoneSub(SCA.total)}</p>
+    <button onclick="home()">${t.home}</button></div>`;
+}
+function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+document.getElementById('appTitle').textContent=t.title;
+document.getElementById('appSub').textContent=t.sub;
+boot();
+</script>
+</body>
+</html>

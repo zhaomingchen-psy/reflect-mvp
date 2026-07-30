@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PsyCLIENT 判定复盘</title>
+<style>
+  :root{--ink:#1a1a1a;--sub:#6b6b6b;--line:#e5e2dc;--bg:#faf9f7;--card:#fff;
+        --hit:#2e7d32;--partial:#b26a00;--miss:#b3372e;--accent:#3d5a80;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Songti SC","Noto Serif CJK SC",serif;background:var(--bg);color:var(--ink);line-height:1.7}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 20px 80px}
+  h1{font-size:19px}
+  .stats{background:var(--card);border:1px solid var(--line);border-radius:10px;
+         padding:14px 18px;margin:16px 0;display:flex;gap:26px;flex-wrap:wrap;font-size:14px}
+  .stats b{font-size:20px;display:block}
+  .filter{margin-bottom:14px;font-size:13px;color:var(--sub)}
+  .filter select{font:inherit;padding:3px 8px;border:1px solid var(--line);border-radius:6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin-bottom:12px}
+  .meta{font-size:12px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .utt{font-size:13px;color:var(--sub);border-left:3px solid var(--line);padding-left:10px;margin-bottom:8px}
+  .resp{font-size:15px;margin-bottom:8px}
+  .ann-box{font-size:12px;color:var(--sub);background:var(--bg);border-radius:6px;padding:8px 10px;margin-bottom:8px}
+  .v{font-weight:700}
+  .v.hit{color:var(--hit)} .v.partial{color:var(--partial)} .v.miss{color:var(--miss)}
+  .fbrow{font-size:13px;color:var(--sub)} .fbrow b{color:var(--ink);font-weight:400}
+  .judge{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .judge button{font:inherit;font-size:13px;padding:5px 14px;border-radius:99px;cursor:pointer;
+                border:1px solid var(--line);background:#fff}
+  .judge button.on-agree{background:var(--hit);border-color:var(--hit);color:#fff}
+  .judge button.on-disagree{background:var(--miss);border-color:var(--miss);color:#fff}
+  .judge select,.judge input{font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--line);border-radius:6px}
+  .judge input{flex:1;min-width:160px}
+  .saved{font-size:12px;color:var(--hit)}
+  .empty{color:var(--sub);padding:40px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>判定复盘 · 人工标注</h1>
+  <div class="stats" id="stats"></div>
+  <div class="filter">
+    筛选：<select id="fSkill" onchange="draw()"><option value="">全部技能</option></select>
+    <select id="fVerdict" onchange="draw()"><option value="">全部判定</option>
+      <option value="hit">hit</option><option value="partial">partial</option><option value="miss">miss</option></select>
+    <select id="fAnn" onchange="draw()"><option value="">全部</option>
+      <option value="un">未标注</option><option value="agree">已同意</option><option value="disagree">已不同意</option></select>
+    <select id="fUser" onchange="draw()"><option value="">全部学员</option></select>
+  </div>
+  <div id="list"></div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const VW={hit:'✓ hit',partial:'◐ partial',miss:'✗ miss'};
+let DATA=null;
+async function boot(){
+  DATA=await (await fetch('/api/review_data')).json();
+  const sk=$('#fSkill');
+  for(const [k,v] of Object.entries(DATA.skills)){const o=document.createElement('option');o.value=k;o.textContent=v;sk.appendChild(o);}
+  const us=[...new Set(DATA.entries.map(e=>e.user).filter(Boolean))];
+  const uf=$('#fUser');
+  us.forEach(u=>{const o=document.createElement('option');o.value=u;o.textContent=u;uf.appendChild(o);});
+  draw();
+}
+function annOf(key){return DATA.annotations[key]||null;}
+function draw(){
+  const fs=$('#fSkill').value,fv=$('#fVerdict').value,fa=$('#fAnn').value,fu=$('#fUser').value;
+  const rows=DATA.entries.filter(e=>{
+    if(fu&&e.user!==fu)return false;
+    if(fs&&e.skill!==fs)return false;
+    if(fv&&e.feedback.verdict!==fv)return false;
+    const a=annOf(e.key);
+    if(fa==='un'&&a)return false;
+    if(fa==='agree'&&(!a||!a.agree))return false;
+    if(fa==='disagree'&&(!a||a.agree))return false;
+    return true;
+  });
+  // 统计
+  const all=DATA.entries,annd=all.filter(e=>annOf(e.key));
+  const agreeN=annd.filter(e=>annOf(e.key).agree).length;
+  $('#stats').innerHTML=`
+    <div><b>${all.length}</b>作答总数</div>
+    <div><b>${annd.length}</b>已标注</div>
+    <div><b>${annd.length?Math.round(100*agreeN/annd.length)+'%':'—'}</b>人工同意率</div>
+    <div><b>${(all.reduce((s,e)=>s+(e.secs||0),0)/(all.length||1)).toFixed(1)}s</b>平均反馈耗时</div>`;
+  if(!rows.length){$('#list').innerHTML='<div class="empty">没有符合条件的记录。先去 <a href="/">练习页</a> 做几题。</div>';return;}
+  $('#list').innerHTML=rows.map(e=>{
+    const f=e.feedback,a=annOf(e.key),v=f.verdict;
+    return `<div class="card" id="c-${cssKey(e.key)}">
+      <div class="meta"><span>${e.ts||''}</span>${e.user?`<span><b>${esc(e.user)}</b></span>`:''}<span>${DATA.skills[e.skill]||e.skill} · ${e.item}</span>
+        <span>第 ${e.attempt} 次</span><span>自评 ${e.self_rating??'—'}</span><span>${e.secs}s</span></div>
+      <div class="utt">${e.utterance}</div>
+      <div class="resp">学员：${esc(e.response)}</div>
+      <div class="ann-box">标注（学员不可见）— 表层：${e.surface}｜情绪：${e.emotions}｜意义：${e.meaning}</div>
+      <div class="fbrow"><span class="v ${v}">${VW[v]||v}</span> · is_reflection=${f.is_reflection}</div>
+      ${f.captured?`<div class="fbrow">接住：<b>${esc(f.captured)}</b></div>`:''}
+      ${f.missed?`<div class="fbrow">遗漏：<b>${esc(f.missed)}</b></div>`:''}
+      ${f.comment?`<div class="fbrow">点评：<b>${esc(f.comment)}</b></div>`:''}
+      ${f.rewrite_hint?`<div class="fbrow">改写：<b>${esc(f.rewrite_hint)}</b></div>`:''}
+      <div class="judge">
+        <button class="${a&&a.agree?'on-agree':''}" onclick="mark('${e.key}',true)">同意判定</button>
+        <button class="${a&&!a.agree?'on-disagree':''}" onclick="mark('${e.key}',false)">不同意</button>
+        <select id="ev-${cssKey(e.key)}">
+          <option value="">我认为应判…</option>
+          <option value="hit" ${a&&a.expert_verdict==='hit'?'selected':''}>hit</option>
+          <option value="partial" ${a&&a.expert_verdict==='partial'?'selected':''}>partial</option>
+          <option value="miss" ${a&&a.expert_verdict==='miss'?'selected':''}>miss</option>
+        </select>
+        <input id="nt-${cssKey(e.key)}" placeholder="备注（哪里不对／点评不像督导等）" value="${a?esc(a.note||''):''}">
+        <span class="saved" id="sv-${cssKey(e.key)}">${a?'已保存':''}</span>
+      </div></div>`;
+  }).join('');
+}
+function cssKey(k){return k.replace(/[^a-zA-Z0-9]/g,'_');}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+async function mark(key,agree){
+  const ck=cssKey(key);
+  const body={key,agree,expert_verdict:$('#ev-'+ck).value||null,note:$('#nt-'+ck).value};
+  const r=await fetch('/api/annotate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){DATA.annotations[key]={...body};$('#sv-'+ck).textContent='已保存';draw();}
+  else{$('#sv-'+ck).textContent='保存失败';}
+}
+boot();
+</script>
+</body>
+</html>
