@@ -113,6 +113,51 @@ def user_prompt(item, resp):
             f"\n\n【学员的回应】\n{resp}")
 
 
+# ---------- 示范式反馈（学员主动索取，且只在作答之后） ----------
+def example_system_prompt(skill):
+    """生成一个体现目标技能的示范回应。
+    依《研究设计》：示范式只提供可对照的样例，**不解释学员的回应**。"""
+    name, desc, field = SKILL_DEFS[skill]
+    criteria_block = '\n'.join(f'{i + 1}. {c}' for i, c in enumerate(CRITERIA[skill]))
+    return f"""你是一位资深的心理咨询督导。学员已经写完自己的回应，现在主动要求看一个示范。
+请针对这个话轮写出一句体现【{name}】的示范回应。
+
+【{name}】：{desc}
+
+【必须满足的技术标准】
+{criteria_block}
+
+【硬性要求】
+1. 只写一句自然的口语，像真的坐在来访者对面说出来的话，长度与来访者话轮相称（一般 20–60 字）。
+2. 必须准确对上「{field}」标注里的内容——这是示范之所以是示范的原因。
+3. **不要评价、不要提及学员写了什么**，你看不到也不需要看。只给样例。
+4. 不用咨询腔套话开头（"我听到你说""我感受到"这类能免则免），不堆砌情绪词。
+5. 不写任何解释性括注，不写"示范："之类的前缀。
+
+【输出格式】只输出 JSON：
+{{"example": "<示范句>", "why": "<这句示范做到了什么，30字以内，只谈示范本身>"}}"""
+
+
+def example_user_prompt(item):
+    _, _, field = SKILL_DEFS[item['skill']]
+    lines = []
+    for key, label in FIELD_LABELS:
+        mark = '  ← 本次示范要对上的' if label == field else ''
+        lines.append(f"- {label}：{item[key]}{mark}")
+    return (f"【案例背景】{item['background']}\n\n【前文语境】\n{item['context']}\n\n"
+            f"【来访者的话】\n{item['utterance']}\n\n【内在状态标注】\n" + '\n'.join(lines))
+
+
+def example_allowed(skill, verdict):
+    """褪除规则（《研究设计》表：W1–2 每题、W3 仅未命中、W4 不给）。
+    模块与周次对应：content=W1，feeling=W2，meaning=W3；对话练习=W4，不调用本函数。"""
+    if skill in ('content', 'feeling'):
+        return True
+    if skill == 'meaning':
+        return verdict != 'hit'
+    return False
+
+
 def postprocess(out):
     """R3 的代码级强制执行：matched 非空且是反映 → hit。
     模型偶发违反自己的机械规则（约 5% 的边界样本），此处兜底。

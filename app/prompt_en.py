@@ -111,6 +111,41 @@ On a hit, rewrite_hint offers one optional "go further" direction (leave empty i
 criteria must contain exactly 3 entries, in the same order as the three criteria above."""
 
 
+def example_system_prompt_en(skill):
+    """Generate one worked example of the target skill.
+    Per the study design, a worked example only supplies a sample for comparison
+    and does not comment on what the trainee wrote."""
+    name, desc, field = SKILL_DEFS_EN[skill]
+    criteria_block = '\n'.join(f'{i + 1}. {c}' for i, c in enumerate(CRITERIA_EN[skill]))
+    return f"""You are an experienced counselling supervisor. The trainee has already written their own response and is now asking to see a worked example.
+Write one response for this turn that embodies **{name}**.
+
+**{name}**: {desc}
+
+[CRITERIA THE EXAMPLE MUST MEET]
+{criteria_block}
+
+[HARD REQUIREMENTS]
+1. Write one sentence of natural speech, the kind someone would actually say sitting across from the client, proportionate to the client's turn (usually 15-40 words).
+2. It must match the annotation under "{field}" accurately. That is what makes it a worked example.
+3. **Do not evaluate and do not refer to what the trainee wrote.** You cannot see it and do not need to.
+4. Avoid counselling-speak openers ("I hear you saying", "I sense that") and do not pile on emotion words.
+5. Add no parenthetical explanations and no prefix such as "Example:".
+
+[OUTPUT FORMAT] Output JSON only:
+{{"example": "<the sentence>", "why": "<what this example achieves, under 20 words, about the example only>"}}"""
+
+
+def example_user_prompt_en(item):
+    _, _, field = SKILL_DEFS_EN[item['skill']]
+    lines = []
+    for key, label in FIELD_LABELS_EN:
+        mark = '  <- what this example must match' if label == field else ''
+        lines.append(f"- {label}: {item[key]}{mark}")
+    return (f"[CASE BACKGROUND] {item['background']}\n\n[PRECEDING CONTEXT]\n{item['context']}\n\n"
+            f"[WHAT THE CLIENT SAID]\n{item['utterance']}\n\n[INNER-STATE ANNOTATION]\n" + '\n'.join(lines))
+
+
 def user_prompt_en(item, resp):
     _, _, field = SKILL_DEFS_EN[item['skill']]
     lines = []
