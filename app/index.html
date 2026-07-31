@@ -115,6 +115,9 @@ const T={
   histTitle:'你这道题的历次反馈',histRound:n=>`第 ${n} 次作答`,histNone:'提交后，历次反馈会留在这里，方便对照修改。',
   critTitle:'技术标准核对',respType:'回应类型',landLayer:'落在哪一层',
   jumpConv:'直接进入对话练习',jumpConvNote:'不必做完题目，随时可以进',
+  exBtn:'看一个示范句',exWait:'督导在写示范…',exTitle:'示范',exWhy:'这句示范做到了',
+  exNone:'本模块（意义反映）只在未命中时提供示范——你已经命中了。',
+  exHint:'示范只供对照，不必照抄；你的原句和它各有取舍。',
   convNow:'对话练习',backItems:'回到题目',
   whyMatters:'来访者此刻会怎样',clientSaid:'来访者：',yourResp:'你写的：',
   demoTitle:'示范与定义',criteria:'技术标准',criteriaNote:'——练习与反馈都对着这三条',
@@ -178,6 +181,9 @@ const T={
   histTitle:'Your feedback on this item',histRound:n=>`attempt ${n}`,histNone:'After you submit, each round of feedback stays here so you can compare while revising.',
   critTitle:'Criteria check',respType:'Response type',landLayer:'Landed on',
   jumpConv:'Go straight to conversation practice',jumpConvNote:'No need to finish the items first',
+  exBtn:'Show a worked example',exWait:'Writing an example…',exTitle:'Worked example',exWhy:'What it achieves',
+  exNone:'In this module (reflection of meaning) an example appears only after a miss, and you hit it.',
+  exHint:'The example is for comparison, not for copying; your own sentence made different choices.',
   convNow:'Conversation practice',backItems:'Back to the items',
   whyMatters:'What the client does next',clientSaid:'Client: ',yourResp:'You wrote: ',
   demoTitle:'Worked examples and definition',criteria:'Skill criteria',criteriaNote:'— practice and feedback both address these three',
@@ -528,10 +534,35 @@ function showFeedback(f,resp){
     <dl>${rows.map(([a,c])=>`<dt>${a}</dt><dd>${c}</dd>`).join('')}</dl>
     ${cs?`<dt style="color:var(--sub);font-size:12px;margin-top:10px">${t.critTitle}</dt>
       <ul class="crit">${cs}</ul>`:''}
+    <div id="exbox">${EX_OK(cur.skill,v)
+      ?`<button class="ghost" id="exbtn" onclick="getExample('${v}')" style="font-size:13px;padding:6px 14px">${t.exBtn}</button>`
+      :`<div class="sub" style="font-size:12px;margin-top:10px">${t.exNone}</div>`}</div>
     ${canRetry?`<button onclick="retry('${encodeURIComponent(resp)}')">${t.retry(attempt+1)}</button>`:''}
     <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button></div>`;
   const sd=$('#side'); if(sd)sd.innerHTML=sideRef()+sideHist();
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+}
+/* 示范式反馈：褪除规则与服务端 example_allowed 一致（内容/情感每题；意义仅未命中；对话练习不给） */
+function EX_OK(skill,verdict){
+  if(skill==='content'||skill==='feeling')return true;
+  if(skill==='meaning')return verdict!=='hit';
+  return false;
+}
+async function getExample(verdict){
+  const btn=$('#exbtn'); if(btn){btn.disabled=true;btn.textContent=t.exWait;}
+  try{
+    const r=await api('/api/example',{method:'POST',
+      body:JSON.stringify({item_id:cur.id,verdict,attempt,user:USER,lang:LANG})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'example failed');
+    $('#exbox').innerHTML=`<div class="polish" style="border-style:solid">
+      <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:4px">${t.exTitle}</div>
+      <div style="font-size:15px">${esc2(d.example)}</div>
+      ${d.why?`<div class="pr">${t.exWhy}：${esc2(d.why)}</div>`:''}
+      <div class="pr" style="font-style:italic">${t.exHint}</div></div>`;
+  }catch(e){
+    $('#exbox').innerHTML=`<div class="err">${e.message}</div>`;
+  }
 }
 function retry(prev){attempt++;render(decodeURIComponent(prev));}
 function next(){

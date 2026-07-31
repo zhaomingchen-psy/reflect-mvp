@@ -52,8 +52,10 @@ def _load_items(fn):
 ITEMS_BY_LANG = {'zh': _load_items('items.json'), 'en': _load_items('items_en.json')}
 ITEMS = ITEMS_BY_LANG['zh']   # 兼容旧引用
 
-from prompt import SKILL_DEFS, CRITERIA, system_prompt, user_prompt, postprocess  # noqa: E402  提示词单一来源
-from prompt_en import SKILL_DEFS_EN, CRITERIA_EN, system_prompt_en, user_prompt_en  # noqa: E402
+from prompt import (SKILL_DEFS, CRITERIA, system_prompt, user_prompt, postprocess,  # noqa: E402  提示词单一来源
+                    example_system_prompt, example_user_prompt, example_allowed)
+from prompt_en import (SKILL_DEFS_EN, CRITERIA_EN, system_prompt_en, user_prompt_en,  # noqa: E402
+                       example_system_prompt_en, example_user_prompt_en)
 import convo      # noqa: E402  对话练习模式（中文）
 import convo_en   # noqa: E402  对话练习模式（英文）
 
@@ -63,12 +65,14 @@ def L(lang):
     if lang == 'en':
         return dict(lang='en', items=ITEMS_BY_LANG['en'], defs=SKILL_DEFS_EN, crit=CRITERIA_EN,
                     sys=system_prompt_en, usr=user_prompt_en,
+                    ex_sys=example_system_prompt_en, ex_usr=example_user_prompt_en,
                     conv_cases=convo_en.CONV_CASES_EN, sca_cases=convo_en.SCA_CASES_EN,
                     client_sys=convo_en.client_system_prompt_en, client_usr=convo_en.client_user_prompt_en,
                     sum_sys=convo_en.summary_system_prompt_en, sum_usr=convo_en.summary_user_prompt_en,
                     pol_sys=convo_en.polish_system_prompt_en, pol_usr=convo_en.polish_user_prompt_en)
     return dict(lang='zh', items=ITEMS_BY_LANG['zh'], defs=SKILL_DEFS, crit=CRITERIA,
                 sys=system_prompt, usr=user_prompt,
+                ex_sys=example_system_prompt, ex_usr=example_user_prompt,
                 conv_cases=convo.CONV_CASES, sca_cases=convo.SCA_CASES,
                 client_sys=convo.client_system_prompt, client_usr=convo.client_user_prompt,
                 sum_sys=convo.summary_system_prompt, sum_usr=convo.summary_user_prompt,
@@ -504,6 +508,31 @@ class H(BaseHTTPRequestHandler):
                 out, err = conv_end(body['session_id'])
                 if out is None:
                     return self._send(400, {'error': err})
+                return self._send(200, out)
+            except Exception as e:
+                return self._send(500, {'error': str(e)[:200]})
+        if self.path == '/api/example':
+            # 示范式反馈：学员主动索取，只在作答之后；使用记录进日志供依赖分析
+            try:
+                n = int(self.headers.get('Content-Length', 0))
+                body = json.loads(self.rfile.read(n).decode())
+                lang = norm_lang(body.get('lang'))
+                r = L(lang)
+                item = r['items'][body['item_id']]
+                verdict = body.get('verdict')
+                if not example_allowed(item['skill'], verdict):
+                    return self._send(403, {'error': 'example not available for this module'})
+                t0 = time.time()
+                out, err = call_llm(r['ex_sys'](item['skill']), r['ex_usr'](item), retry=1)
+                secs = round(time.time() - t0, 1)
+                log_line(dict(ts=time.strftime('%Y-%m-%d %H:%M:%S'), type='example_shown',
+                              user=(body.get('user') or '').strip() or None, lang=lang,
+                              item=item['id'], skill=item['skill'],
+                              attempt=body.get('attempt'), verdict_at_request=verdict,
+                              example=(out or {}).get('example'), secs=secs, error=err))
+                if out is None or not out.get('example'):
+                    return self._send(502, {'error': '示范生成失败，请重试 / example failed, please retry',
+                                            'detail': err})
                 return self._send(200, out)
             except Exception as e:
                 return self._send(500, {'error': str(e)[:200]})
