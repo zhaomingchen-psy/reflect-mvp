@@ -24,6 +24,18 @@
   textarea{width:100%;min-height:90px;font:inherit;font-size:15px;padding:12px;border:1px solid var(--line);
            border-radius:8px;resize:vertical;background:#fff}
   textarea:focus{outline:none;border-color:var(--accent)}
+  select{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);
+         border-radius:8px;background:#fff;color:var(--ink);cursor:pointer;appearance:none;
+         background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
+         background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
+         background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  select:focus{outline:none;border-color:var(--accent)}
+  select:invalid{color:var(--sub)}
+  optgroup{font-size:12px;color:var(--sub)}
+  .casebox{background:var(--bg);border-radius:8px;padding:12px 14px;margin-top:12px;font-size:14px;
+           color:var(--ink);line-height:1.7;display:none}
+  .casebox.on{display:block}
+  .casebox .cat{color:var(--accent);font-weight:700;margin-right:8px}
   .rate{display:flex;align-items:center;gap:12px;margin-top:8px}
   .rate input{flex:1}
   .rate span{font-variant-numeric:tabular-nums;width:2em;text-align:center}
@@ -142,6 +154,17 @@ const T={
   finishTitle:'结构化练习完成。',
   finishSub:'接下来与来访者做一段完整对话（10 轮左右）。对话中<b>没有任何提示与反馈</b>——像真实会谈一样；结束后一起复盘。',
   startConv:'开始对话练习',backFirst:'先返回列表',
+  pickTitle:'选择这次的来访者',
+  pickSub:n=>`本次会谈的练习重点仍是<b>${n}</b>，只是换一位来访者。挑一个你想练的议题。`,
+  pickPh:'请选择来访者',
+  grpModule:'本周题目里的这一位',
+  grpLib:'按议题选择',
+  optModule:'继续上次那位来访者（推荐）',
+  optModuleBlurb:'与本周结构化练习题同一个人物，背景你已经熟悉，注意力可以全放在技能上。',
+  pickGo:'进入咨询室',
+  pickHint:'选好之后可以开始。每个来访者都可以反复练。',
+  casesFail:'议题清单加载失败，可以先用本周题目里的那位来访者。',
+  otherClient:'换一位来访者',
   entering:'来访者进入咨询室…',convTag:(n,a,b)=>`对话练习 · ${n}为重点 · 第 ${a}/${b} 轮`,
   typing:'来访者正在回应…',convPh:'像真实会谈一样回应…',send:'发送',polishBtn:'帮我改得更共情',
   polishing:'润色中…',needDraft:'先写一句草稿，再请督导帮你润色。',
@@ -208,6 +231,17 @@ const T={
   finishTitle:'Structured practice complete.',
   finishSub:'Next is a full conversation with the client (about 10 turns). During the conversation there are <b>no prompts and no feedback</b> — just like a real session; the debrief comes afterwards.',
   startConv:'Start conversation practice',backFirst:'Back to the list for now',
+  pickTitle:'Choose a client for this session',
+  pickSub:n=>`The focus stays on <b>${n}</b> — you are only changing who you are talking to. Pick a presenting problem you want to practise on.`,
+  pickPh:'Select a client',
+  grpModule:'The client from this week’s items',
+  grpLib:'By presenting problem',
+  optModule:'Continue with the same client (recommended)',
+  optModuleBlurb:'The same person as in this week’s structured items — you already know the background, so your attention can stay on the skill.',
+  pickGo:'Go in',
+  pickHint:'Pick one and start. Every client can be practised more than once.',
+  casesFail:'Could not load the list. You can still use the client from this week’s items.',
+  otherClient:'A different client',
   entering:'The client is coming in…',convTag:(n,a,b)=>`Conversation practice · focus: ${n} · turn ${a}/${b}`,
   typing:'The client is responding…',convPh:'Respond as you would in a real session…',send:'Send',polishBtn:'Help me make this more empathic',
   polishing:'Working…',needDraft:'Write a draft first, then ask for a rewrite.',
@@ -393,7 +427,7 @@ function home(){
       </div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startSkill('${sk}')">${t.startPractice}</button>
-        <button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startConv('${sk}')">${t.convNow}</button>
+        <button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="convPicker('${sk}')">${t.convNow}</button>
       </div></div>`;
   }
   h+=`<div style="margin-top:20px;border-top:1px dashed var(--line);padding-top:12px">
@@ -429,7 +463,7 @@ function startSkill(sk){
     ${demoHtml}
     <p class="sub" style="font-size:12px;margin-top:12px">${t.placeholderNote}</p>
     <button onclick="showItem()">${t.startPractice}（${queue.length}${t.items}）</button>
-    <button class="ghost" onclick="startConv('${sk}')">${t.jumpConv}</button>
+    <button class="ghost" onclick="convPicker('${sk}')">${t.jumpConv}</button>
     <button class="ghost" onclick="home()">${t.back}</button></div>`;
 }
 function showItem(){
@@ -445,7 +479,7 @@ function sideRef(){
       <div style="margin-top:4px"><span class="badge ${d.tag==='good'?'hit':'miss'}">${d.tag==='good'?t.refGood:t.refBad}</span> ${esc2(d.r)}</div>
     </div>`).join('');
   return `<div class="card" style="border-color:var(--accent)">
-    <button onclick="startConv('${cur.skill}')" style="width:100%;margin-top:0;font-size:14px;padding:8px 12px">${t.jumpConv}</button>
+    <button onclick="convPicker('${cur.skill}')" style="width:100%;margin-top:0;font-size:14px;padding:8px 12px">${t.jumpConv}</button>
     <div class="sub" style="font-size:12px;margin-top:6px;text-align:center">${t.jumpConvNote}</div>
   </div>
   <div class="card">
@@ -599,20 +633,75 @@ function finish(){
   const sk=queue[0].skill;
   $('#app').innerHTML=`<div class="card"><b>${t.finishTitle}</b>
     <p class="sub" style="margin-top:8px">${t.finishSub}</p>
-    <button onclick="startConv('${sk}')">${t.startConv}</button>
+    <button onclick="convPicker('${sk}')">${t.startConv}</button>
     <button class="ghost" onclick="home()">${t.backFirst}</button></div>`;
 }
 
 /* ================= 对话练习 ================= */
 let CONV=null;
-async function startConv(sk){
+let CASES=null, CASES_LANG=null;   // 议题案例清单缓存（按语言）
+
+async function loadCases(){
+  if(CASES && CASES_LANG===LANG) return CASES;
+  const r=await api('/api/conv_cases?lang='+LANG);
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'cases failed');
+  CASES=d.cases||[]; CASES_LANG=LANG;
+  return CASES;
+}
+
+/* 选择来访者：占位项不可提交，选中后显示简介并解锁按钮 */
+async function convPicker(sk){
+  narrow();
+  const s=SKILL_INTRO[sk];
+  let list=[],failed=false;
+  try{ list=await loadCases(); }catch(e){ failed=true; }
+  const opts=list.map(c=>`<option value="${esc2(c.key)}">${esc2(c.category)}</option>`).join('');
+  $('#app').innerHTML=`<div class="card">
+    ${goalLine()}
+    <h2 style="margin:0 0 6px;font-size:19px">${t.pickTitle}</h2>
+    <div class="sub" style="margin-bottom:18px">${t.pickSub(s.name)}</div>
+    ${failed?`<div class="err">${t.casesFail}</div>`:''}
+    <select id="casesel" required onchange="onCasePick()">
+      <option value="" selected disabled>${t.pickPh}</option>
+      <optgroup label="${t.grpModule}">
+        <option value="__module__">${t.optModule}</option>
+      </optgroup>
+      ${list.length?`<optgroup label="${t.grpLib}">${opts}</optgroup>`:''}
+    </select>
+    <div class="casebox" id="casebox"></div>
+    <button id="casego" disabled onclick="goConv('${sk}')" style="width:100%">${t.pickGo}</button>
+    <div class="sub" style="margin:10px 0 0;font-size:12px">${t.pickHint}</div>
+    <button class="ghost" onclick="home()" style="width:100%;margin-top:10px">${t.backFirst}</button>
+  </div>`;
+}
+function onCasePick(){
+  const v=$('#casesel').value, box=$('#casebox');
+  if(!v){box.className='casebox';$('#casego').disabled=true;return;}
+  if(v==='__module__'){
+    box.innerHTML=`<span class="cat">${t.optModule}</span>${esc2(t.optModuleBlurb)}`;
+  }else{
+    const c=(CASES||[]).find(x=>x.key===v);
+    box.innerHTML=c?`<span class="cat">${esc2(c.category)}</span>${esc2(c.blurb)}`:'';
+  }
+  box.className='casebox on';
+  $('#casego').disabled=false;
+}
+function goConv(sk){
+  const v=$('#casesel').value;
+  startConv(sk, v==='__module__'?null:v);
+}
+
+async function startConv(sk, caseKey){
   $('#app').innerHTML=`<div class="card"><div class="spin" style="display:block">${t.entering}</div></div>`;
   try{
     const r=await api('/api/conv_start',{method:'POST',
-      body:JSON.stringify({skill:sk,user:USER,lang:LANG})});
+      body:JSON.stringify({skill:sk,user:USER,lang:LANG,case_key:caseKey||''})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'start failed');
-    CONV={sid:d.session_id,skill:sk,turn:0,min:d.min_turns,max:d.max_turns,canEnd:false,msgs:[{role:'client',text:d.client_text}],bg:d.background};
+    CONV={sid:d.session_id,skill:sk,caseKey:caseKey||null,category:d.category||null,
+          turn:0,min:d.min_turns,max:d.max_turns,canEnd:false,
+          msgs:[{role:'client',text:d.client_text}],bg:d.background};
     drawConv();
   }catch(e){$('#app').innerHTML=`<div class="card"><div class="err">${e.message}</div><button onclick="home()">返回</button></div>`;}
 }
@@ -754,7 +843,8 @@ function drawDebrief(d){
           <div style="font-size:14px;margin-top:4px">${t.you}${esc2(x.response)} ${VB(x.verdict)}${x.polish?`<span class="sub" style="font-size:11px">${t.usedPolish}</span>`:''}</div>
         </div>`).join('')}</div></details>`:''}
     <div style="display:flex;gap:10px">
-      <button style="margin-top:16px" onclick="startConv(CONV.skill)">${t.againConv}</button>
+      <button style="margin-top:16px" onclick="startConv(CONV.skill,CONV.caseKey)">${t.againConv}</button>
+      <button class="ghost" style="margin-top:16px" onclick="convPicker(CONV.skill)">${t.otherClient}</button>
       <button class="ghost" style="margin-top:16px" onclick="home()">${t.backList}</button>
     </div></div>`;
 }

@@ -58,6 +58,8 @@ from prompt_en import (SKILL_DEFS_EN, CRITERIA_EN, system_prompt_en, user_prompt
                        example_system_prompt_en, example_user_prompt_en)
 import convo      # noqa: E402  对话练习模式（中文）
 import convo_en   # noqa: E402  对话练习模式（英文）
+import conv_lib      # noqa: E402  对话练习案例库（20 个议题，中文）
+import conv_lib_en   # noqa: E402  对话练习案例库（英文）
 
 # ---------- 语言分流 ----------
 def L(lang):
@@ -67,6 +69,7 @@ def L(lang):
                     sys=system_prompt_en, usr=user_prompt_en,
                     ex_sys=example_system_prompt_en, ex_usr=example_user_prompt_en,
                     conv_cases=convo_en.CONV_CASES_EN, sca_cases=convo_en.SCA_CASES_EN,
+                    conv_lib=conv_lib_en.CONV_LIB_EN, case_list=conv_lib_en.case_list_en,
                     client_sys=convo_en.client_system_prompt_en, client_usr=convo_en.client_user_prompt_en,
                     sum_sys=convo_en.summary_system_prompt_en, sum_usr=convo_en.summary_user_prompt_en,
                     pol_sys=convo_en.polish_system_prompt_en, pol_usr=convo_en.polish_user_prompt_en)
@@ -74,9 +77,19 @@ def L(lang):
                 sys=system_prompt, usr=user_prompt,
                 ex_sys=example_system_prompt, ex_usr=example_user_prompt,
                 conv_cases=convo.CONV_CASES, sca_cases=convo.SCA_CASES,
+                conv_lib=conv_lib.CONV_LIB, case_list=conv_lib.case_list,
                 client_sys=convo.client_system_prompt, client_usr=convo.client_user_prompt,
                 sum_sys=convo.summary_system_prompt, sum_usr=convo.summary_user_prompt,
                 pol_sys=convo.polish_system_prompt, pol_usr=convo.polish_user_prompt)
+
+
+def resolve_conv_case(res, skill, case_key):
+    """对话练习取案例：case_key 命中议题库就用它，否则回落到本模块的延续案例。
+    返回 (case, case_key, category)。case_key 为 None 表示用的是模块默认案例。"""
+    c = (res['conv_lib'] or {}).get(case_key) if case_key else None
+    if c is not None:
+        return c, case_key, c.get('category')
+    return res['conv_cases'][skill], None, None
 
 def norm_lang(v):
     return 'en' if (v or '').lower().startswith('en') else 'zh'
@@ -204,19 +217,24 @@ def gen_client_turn(case, history, lang='zh'):
         return None, 'no utterance'
     return out, None
 
-def conv_start(skill, user=None, lang='zh'):
+def conv_start(skill, user=None, lang='zh', case_key=None):
     r = L(lang)
-    case = r['conv_cases'][skill]
+    case, ck, category = resolve_conv_case(r, skill, case_key)
     sid = uuid.uuid4().hex[:12]
     op = case['opening']
     state = dict(surface=op['surface'], emotions=op['emotions'], meaning=op['meaning'],
                  reaction='open', understood=5, utterance=op['utterance'])
     with SESS_LOCK:
-        SESSIONS[sid] = dict(skill=skill, case_id=case['id'], user=user, lang=lang,
+        SESSIONS[sid] = dict(skill=skill, case_id=case['id'], case_key=ck, category=category,
+                             user=user, lang=lang,
                              history=[dict(role='client', text=op['utterance'])],
                              states=[state], done=False, ts=time.strftime('%Y-%m-%d %H:%M:%S'))
+    # 案例选择本身落日志：自选案例是过程变量，可作协变量与依赖分析用
+    conv_log(dict(type='conv_case_chosen', session=sid, user=user, lang=lang, skill=skill,
+                  case_id=case['id'], case_key=ck, category=category))
     return dict(session_id=sid, client_text=op['utterance'],
-                background=case['background'], turn=1,
+                background=case['background'], turn=1, case_id=case['id'],
+                case_key=ck, category=category,
                 min_turns=convo.MIN_TURNS, max_turns=convo.MAX_TURNS)
 
 def conv_reply(sid, resp_text):
@@ -241,7 +259,7 @@ def conv_reply(sid, resp_text):
     if n_student >= convo.MAX_TURNS:
         return dict(client_text=None, ended=True, turn=n_student), None
     lang = sess.get('lang', 'zh')
-    case = L(lang)['conv_cases'][sess['skill']]
+    case, _, _ = resolve_conv_case(L(lang), sess['skill'], sess.get('case_key'))
     state, err = gen_client_turn(case, sess['history'], lang)
     if state is None:
         sess['history'].pop()
@@ -262,7 +280,7 @@ def conv_end(sid):
     skill = sess['skill']
     lang = sess.get('lang', 'zh')
     res = L(lang)
-    case = res['conv_cases'][skill]
+    case, _, _ = resolve_conv_case(res, skill, sess.get('case_key'))
     # 组装 (来访者话轮+状态, 学员回应) 对
     pairs = []
     hist = sess['history']
@@ -312,6 +330,7 @@ def conv_end(sid):
                   moments=moments, summary=sm or {}, transcript=transcript,
                   prev_goal=(prev['goal'] if prev else None))
     conv_log(dict(type='session', ts=sess['ts'], user=sess.get('user'), lang=lang, session=sid, skill=skill, case=case['id'],
+                  case_key=sess.get('case_key'), category=sess.get('category'),
                   history=hist, states=sess['states'], evals=evals,
                   summary=sm, key_moments=key_idx,
                   polish_events=sess.get('polish_events', [])))
@@ -408,6 +427,15 @@ class H(BaseHTTPRequestHandler):
                    for it in r['items'].values()]
             self._send(200, {'items': vis, 'skills': {k: v[0] for k, v in r['defs'].items()},
                              'criteria': r['crit']})
+        elif base == '/api/conv_cases':
+            # 对话练习的议题案例清单（下拉框用）。只下发 key/议题名/一句话简介，
+            # 绝不下发 profile 与 opening 的内在状态标注。
+            if not self._authed():
+                return self._send(401, {'error': 'access code required'})
+            from urllib.parse import urlparse, parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            r = L(norm_lang((q.get('lang') or ['zh'])[0]))
+            self._send(200, {'cases': r['case_list']()})
         elif base == '/api/review_data':
             if not self._authed():
                 return self._send(401, {'error': 'access code required'})
@@ -455,7 +483,8 @@ class H(BaseHTTPRequestHandler):
                 n = int(self.headers.get('Content-Length', 0))
                 body = json.loads(self.rfile.read(n).decode())
                 return self._send(200, conv_start(body['skill'], (body.get('user') or '').strip() or None,
-                                                  norm_lang(body.get('lang'))))
+                                                  norm_lang(body.get('lang')),
+                                                  (body.get('case_key') or '').strip() or None))
             except Exception as e:
                 return self._send(500, {'error': str(e)[:200]})
         if self.path == '/api/conv_reply':
