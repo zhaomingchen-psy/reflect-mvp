@@ -213,6 +213,55 @@ def review_data():
             'skills': {k: v[0] for k, v in SKILL_DEFS.items()}}
 
 
+def user_history(user, lang):
+    """某学员的练习历史（供「续做」「我的练习记录」「模块小结」）：题目作答、找错判定、对话复盘。
+    只按姓名/学号取，身份不做认证——与平台其他地方一致。"""
+    items, fixes, convs = [], {}, []
+    if not user or not os.path.isdir(LOG_DIR):
+        return dict(items=items, fix=fixes, convs=convs)
+    for fn in sorted(os.listdir(LOG_DIR)):
+        path = os.path.join(LOG_DIR, fn)
+        if not fn.endswith('.jsonl'):
+            continue
+        is_log, is_conv = fn.startswith('log_'), fn.startswith('conv_')
+        if not (is_log or is_conv):
+            continue
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                try:
+                    r = json.loads(line)
+                except Exception:
+                    continue
+                if r.get('user') != user or (r.get('lang') or 'zh') != lang:
+                    continue
+                if is_log and r.get('type') == 'fix_check':
+                    fixes[r.get('item')] = dict(choice=r.get('choice'), answer=r.get('answer'),
+                                                correct=r.get('correct'), ts=r.get('ts'),
+                                                note=(ITEMS_BY_LANG.get(lang, {}).get(r.get('item')) or {}).get('error_note', ''))
+                elif is_log and not r.get('type') and r.get('feedback'):
+                    fb = r['feedback']
+                    items.append(dict(ts=r.get('ts'), item=r.get('item'), skill=r.get('skill'),
+                                      attempt=r.get('attempt'), response=r.get('response'),
+                                      self_layer=r.get('self_layer'), layer=r.get('layer') or canon_layer(fb.get('layer')),
+                                      f={k: fb.get(k) for k in ('verdict', 'comment', 'captured', 'missed', 'layer',
+                                                                  'response_type', 'criteria', 'rewrite_hint', 'why_it_matters')}))
+                elif is_conv and r.get('type') == 'session':
+                    evals = r.get('evals') or []
+                    hist = r.get('history') or []
+                    pairs = [(hist[i - 1]['text'] if i > 0 else '', h['text'])
+                             for i, h in enumerate(hist) if h.get('role') == 'counselor']
+                    convs.append(dict(ts=r.get('ts'), session=r.get('session'), skill=r.get('skill'),
+                                      case=r.get('case'), category=r.get('category'),
+                                      verdicts=[e.get('verdict') for e in evals],
+                                      layers=[canon_layer((e.get('feedback') or {}).get('layer')) for e in evals],
+                                      understood_curve=[s.get('understood') for s in (r.get('states') or [])],
+                                      summary=r.get('summary') or {},
+                                      transcript=[dict(client=c, response=p,
+                                                       verdict=(evals[i].get('verdict') if i < len(evals) else None))
+                                                  for i, (c, p) in enumerate(pairs)]))
+    return dict(items=items, fix=fixes, convs=convs)
+
+
 # ---------- 对话练习 ----------
 def conv_log(rec):
     p = os.path.join(LOG_DIR, 'conv_%s.jsonl' % time.strftime('%Y%m%d'))
@@ -343,7 +392,8 @@ def conv_end(sid):
     result = dict(turns=len(pairs), verdicts=verdicts, layers=layers, understood_curve=understood,
                   moments=moments, summary=sm or {}, transcript=transcript,
                   prev_goal=(prev['goal'] if prev else None),
-                  prev_goal_source=((prev.get('source') or 'debrief') if prev else None))
+                  prev_goal_source=((prev.get('source') or 'debrief') if prev else None),
+                  ts=sess['ts'], session=sid, skill=skill, case=case['id'], category=sess.get('category'))
     conv_log(dict(type='session', ts=sess['ts'], user=sess.get('user'), lang=lang, session=sid, skill=skill, case=case['id'],
                   case_key=sess.get('case_key'), category=sess.get('category'),
                   history=hist, states=sess['states'], evals=evals,
@@ -440,7 +490,7 @@ class H(BaseHTTPRequestHandler):
             # 学员可见字段——绝不下发标注
             # 找错改错题额外下发 type 与 flawed（有问题的回应）；error_type 答案留在服务端
             vis = [{k: it.get(k) for k in ('id', 'skill', 'background', 'context', 'utterance', 'level', 'affect',
-                                           'type', 'flawed')}
+                                           'type', 'flawed', 'optional')}
                    for it in r['items'].values()]
             self._send(200, {'items': vis, 'skills': {k: v[0] for k, v in r['defs'].items()},
                              'criteria': r['crit']})
@@ -453,6 +503,13 @@ class H(BaseHTTPRequestHandler):
             q = parse_qs(urlparse(self.path).query)
             r = L(norm_lang((q.get('lang') or ['zh'])[0]))
             self._send(200, {'cases': r['case_list']()})
+        elif base == '/api/history':
+            if not self._authed():
+                return self._send(401, {'error': 'access code required'})
+            from urllib.parse import urlparse, parse_qs
+            q = parse_qs(urlparse(self.path).query)
+            user = (q.get('user') or [''])[0].strip()
+            self._send(200, user_history(user, norm_lang((q.get('lang') or ['zh'])[0])))
         elif base == '/api/review_data':
             if not self._authed():
                 return self._send(401, {'error': 'access code required'})
@@ -659,7 +716,7 @@ class H(BaseHTTPRequestHandler):
             log_line(rec)
             if out is None:
                 return self._send(502, {'error': '反馈生成失败，请重试 / feedback failed, please retry', 'detail': err})
-            self._send(200, {'feedback': out, 'secs': secs, 'layer_canon': layer})
+            self._send(200, {'feedback': out, 'secs': secs, 'layer_canon': layer, 'ts': rec['ts']})
         except Exception as e:
             self._send(500, {'error': str(e)[:200]})
 

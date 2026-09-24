@@ -346,6 +346,65 @@ const T={
   scaNote:n=>`No rewrites, no feedback in assessment; ${n} turns, and responses cannot be edited once sent.`,
   scaDone:'Assessment complete.',scaDoneSub:n=>`All ${n} of your responses have been recorded. Assessments give no immediate feedback; results are rated separately. Thank you.`,
   home:'Back to home',codeAsk:'Access code',codeHint:'Enter the code your administrator gave you.',codeBad:'Wrong code — try again.'}};
+/* ---- 续做 / 我的练习记录 / 模块小结 / 选做题 ---- */
+Object.assign(T.zh,{
+  core:'必做',opt:'选做',
+  progCore:(a,b)=>`必做 ${a}/${b}`,progOpt:(a,b)=>`选做 ${a}/${b}`,
+  contCore:n=>`继续必做（第 ${n} 题）`,startCore:'开始必做练习',redoCore:'从第 1 题重练',
+  optBtn:(a,b)=>`选做题（已做 ${a}/${b}）`,optNote:'选做题不计入训练要求，想多练时随时来做。',
+  sumBtn:'看我目前的小结',histBtn:'我的练习记录',
+  lastTime:'你在这个模块的进度：',allCoreDone:'必做题都做完了，可以做选做题，或者进入对话练习。',
+  optDone:'选做题都做完了。',
+  histTitle2:'我的练习记录',histNoItems:'这个模块还没有做过题。',histNotDone:'未做',
+  histAttempts:n=>`作答 ${n} 次`,histConvTitle:'对话练习记录',histNoConv:'还没有对话练习记录。',
+  histOpenNote:'打开笔记卡',histYourCall:'你的判断',histLanded:'落点',histBack:'回到记录',
+  histLocalNote:'记录保存在这台电脑的浏览器里，同时会从服务器取回；换电脑或清浏览器缓存后，能否找回取决于服务器是否保留了日志。',
+  sumTitle:n=>`${n} · 我的小结`,sumBasis:(n,m)=>`根据你做过的 ${n} 道题、共 ${m} 次作答（必做和选做都算）`,
+  sumEmpty:'还没有作答记录。先做几道题再来看。',
+  sumVerdicts:'每道题最近一次的判定',sumFirstHit:(a,b)=>`第一次就命中：${a}/${b} 道`,sumImproved:n=>`改写后才命中：${n} 道`,
+  sumCrit:'三条技术标准：没做到的次数',sumTypes:'没命中时，你的回应是哪一类',sumLayers:'你的回应落在哪一层',
+  sumCal:(a,b)=>`提交前自判准确：${a}/${b} 次`,sumFix:(a,b)=>`找错改错，找对错误类型：${a}/${b} 道`,
+  sumNext:'下一步可以盯住',
+  sumCritTip:(k,c,a,b)=>`第 ${k} 条技术标准「${c}」——${b} 次作答里有 ${a} 次没做到。`,
+  sumTypeTip:(ty,n)=>`没命中时你最常滑向「${ty}」（${n} 次）。`,
+  sumCalTip:(a,b)=>`自判只对上 ${a}/${b}。提交前多停一秒：这句到底落在内容、情感还是意义？`,
+  sumShallowTip:(n,tl)=>`有 ${n} 次回应停在比「${tl}」更浅的一层。`,
+  sumOk:'这一段很稳。可以去挑战选做题里的高级题，或者进入对话练习。',
+  sumFew:'作答还不多，再做几道，小结就能指出具体该盯哪一条。',
+  sumMixed:'还没有哪一条特别突出。回到「历次反馈」看看没命中的几道题差在哪一层。',
+  typeTip:{'提问':'想问之前，先把刚听到的说回去。','建议':'想给办法时，先让对方觉得被听到。','宽慰':'急着让对方好受一点时，先承认这份难受是真的。',
+    '解释':'想替别人解释时，把注意力拉回来访者自己的感受。','评价':'想下判断时，换成试探性的「好像」「听起来」。','自我表露':'想说自己的经历时，先把焦点留在来访者身上。'},
+  finishOpt:'这一组选做题做完了。'
+});
+Object.assign(T.en,{
+  core:'core',opt:'optional',
+  progCore:(a,b)=>`core ${a}/${b}`,progOpt:(a,b)=>`optional ${a}/${b}`,
+  contCore:n=>`Continue core items (item ${n})`,startCore:'Start the core items',redoCore:'Start again from item 1',
+  optBtn:(a,b)=>`Optional items (${a}/${b} done)`,optNote:'Optional items are not part of the training requirement — do them whenever you want extra practice.',
+  sumBtn:'See my summary so far',histBtn:'My practice record',
+  lastTime:'Your progress in this module: ',allCoreDone:'All core items are done. Try the optional items, or go to conversation practice.',
+  optDone:'All optional items are done.',
+  histTitle2:'My practice record',histNoItems:'No items attempted in this module yet.',histNotDone:'not done',
+  histAttempts:n=>`${n} attempt${n>1?'s':''}`,histConvTitle:'Conversation practice',histNoConv:'No conversation sessions yet.',
+  histOpenNote:'Open the notes card',histYourCall:'your call',histLanded:'landed on',histBack:'Back to the record',
+  histLocalNote:'Your record is kept in this browser and also fetched from the server; on another computer, or after clearing the browser, it can only come back if the server kept the logs.',
+  sumTitle:n=>`${n} · my summary`,sumBasis:(n,m)=>`Based on the ${n} items you have done, ${m} attempts in all (core and optional)`,
+  sumEmpty:'No attempts yet. Do a few items first, then come back.',
+  sumVerdicts:'Latest verdict on each item',sumFirstHit:(a,b)=>`Hit on the first try: ${a}/${b}`,sumImproved:n=>`Hit only after rewriting: ${n}`,
+  sumCrit:'The three criteria: times not met',sumTypes:'When you missed, what kind of response it was',sumLayers:'Where your responses landed',
+  sumCal:(a,b)=>`Accurate pre-submission calls: ${a}/${b}`,sumFix:(a,b)=>`Find and fix — error type identified: ${a}/${b}`,
+  sumNext:'What to watch next',
+  sumCritTip:(k,c,a,b)=>`Criterion ${k}, "${c}" — not met in ${a} of ${b} attempts.`,
+  sumTypeTip:(ty,n)=>`When you miss, you most often slide into "${ty}" (${n} times).`,
+  sumCalTip:(a,b)=>`Your calls matched only ${a}/${b}. Pause for a second before submitting: content, feeling or meaning?`,
+  sumShallowTip:(n,tl)=>`${n} responses stopped at a shallower layer than "${tl}".`,
+  sumOk:'This stretch is steady. Try the advanced optional items, or go to conversation practice.',
+  sumFew:'Not many attempts yet — do a few more and the summary will point to the specific thing to watch.',
+  sumMixed:'Nothing stands out yet. Open your record and look at which layer the missed items fell short on.',
+  typeTip:{'question':'Before you ask, say back what you just heard.','advice':'Before offering a way out, let them feel heard.','reassurance':'When you want them to feel better, first grant that it is hard.',
+    'interpretation':'When you want to explain someone else, bring the focus back to the client\'s own feeling.','evaluation':'When you want to judge, try a tentative "it sounds like" instead.','self-disclosure':'Before telling your own story, keep the focus on theirs.'},
+  finishOpt:'That set of optional items is done.'
+});
 let t=T[LANG];
 const VERDICT={hit:'✓ 命中',partial:'◐ 部分命中',miss:'✗ 脱靶'};
 const vLabel=v=>({hit:t.vHit,partial:t.vPartial,miss:t.vMiss}[v]||v);
@@ -524,6 +583,50 @@ let SELF_LAYER=null;                // 当前作答的先判层
 let CAL={};                         // 每个模块的自判是否准确：{skill:[true,false,...]}
 let FIXDONE={};                     // 找错改错题第一步是否已完成：{item_id:{choice,correct,answer,note}}
 let CP=null;                        // 对比例子进度
+let ITEM_BY_ID={};
+let QMODE='core', ROUND_BASE=0;     // 当前题组（必做/选做）；本轮作答起点，用于「每轮最多 3 次」
+/* ---- 进度与历史：浏览器本地保存，并与服务器日志合并 ---- */
+let PROG={hist:{},fix:{},convs:[]};
+function progKey(){return 'reflect_prog::'+USER+'::'+LANG;}
+function saveProg(){try{localStorage.setItem(progKey(),JSON.stringify(PROG));}catch(e){}}
+async function loadProg(){
+  PROG={hist:{},fix:{},convs:[]};
+  try{const raw=localStorage.getItem(progKey());if(raw)PROG=Object.assign(PROG,JSON.parse(raw));}catch(e){}
+  try{
+    const r=await api('/api/history?user='+encodeURIComponent(USER)+'&lang='+LANG);
+    if(r.ok){
+      const d=await r.json();
+      (d.items||[]).forEach(x=>{
+        const a=(PROG.hist[x.item]=PROG.hist[x.item]||[]);
+        if(!a.some(y=>y.ts===x.ts&&y.attempt===x.attempt))a.push({attempt:x.attempt,resp:x.response,f:x.f,ts:x.ts,my:x.self_layer,real:x.layer});
+      });
+      Object.entries(d.fix||{}).forEach(([k,v])=>{if(!PROG.fix[k])PROG.fix[k]=v;});
+      (d.convs||[]).forEach(c=>{if(!PROG.convs.some(y=>y.session===c.session))PROG.convs.push(c);});
+    }
+  }catch(e){}
+  Object.values(PROG.hist).forEach(a=>a.sort((p,q)=>(p.ts||'').localeCompare(q.ts||'')));
+  PROG.convs.sort((p,q)=>(p.ts||'').localeCompare(q.ts||''));
+  syncProg();saveProg();
+}
+function syncProg(){
+  HIST=PROG.hist;FIXDONE=PROG.fix;
+  results={};CAL={};
+  const all=[];
+  Object.entries(HIST).forEach(([id,a])=>{if(a.length)results[id]=a[a.length-1].f.verdict;a.forEach(x=>all.push([id,x]));});
+  all.sort((p,q)=>(p[1].ts||'').localeCompare(q[1].ts||'')).forEach(([id,x])=>{
+    const it=ITEM_BY_ID[id];if(it&&x.my&&x.real)(CAL[it.skill]=CAL[it.skill]||[]).push(x.my===x.real);});
+}
+function nowTs(){const d=new Date(),z=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;}
+function itemSort(a,b){return ((a.level||2)-(b.level||2))||((a.type==='fix')-(b.type==='fix'))||a.id.localeCompare(b.id);}
+function modItems(sk,mode){return ITEMS.filter(i=>i.skill===sk&&(mode==='opt'?!!i.optional:!i.optional)).sort(itemSort);}
+function isDone(it){return (HIST[it.id]||[]).length>0;}
+function firstUndone(list){const i=list.findIndex(x=>!isDone(x));return i<0?list.length:i;}
+function startQueue(sk,mode,fromStart){
+  QMODE=mode;queue=modItems(sk,mode);
+  qi=fromStart?0:firstUndone(queue);
+  if(qi>=queue.length){return moduleSummary(sk);}
+  showItem();
+}
 
 async function loadGoal(){
   if(!USER){GOAL=null;GOAL_SRC=null;return;}
@@ -585,7 +688,8 @@ async function boot(){
   if(r.status===401){return askCode();}
   const d=await r.json();
   ITEMS=d.items;SKILLS=d.skills;CRITERIA=d.criteria||{};
-  if(!USER){askUser();}else{await loadGoal();home();}
+  ITEM_BY_ID={};ITEMS.forEach(i=>ITEM_BY_ID[i.id]=i);
+  if(!USER){askUser();}else{await loadGoal();await loadProg();home();}
 }
 function askCode(bad){
   $('#app').innerHTML=`${langBar()}<div class="card"><b>${t.codeAsk}</b>
@@ -616,22 +720,26 @@ function askUser(){
 async function setUser(){
   const v=$('#uname').value.trim();
   if(!v)return;
-  USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();home();
+  USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();await loadProg();home();
 }
 function home(){
   narrow();
   const bySkill={};ITEMS.forEach(it=>{(bySkill[it.skill]=bySkill[it.skill]||[]).push(it)});
-  let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}</div>`;
+  let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}
+    · <a href="#" style="color:var(--accent)" onclick="historyPage();return false">${t.histBtn}</a></div>`;
   for(const [sk,items] of Object.entries(bySkill)){
-    const done=items.filter(i=>results[i.id]).length;
+    const core=modItems(sk,'core'),opt=modItems(sk,'opt');
+    const cd=core.filter(isDone).length,od=opt.filter(isDone).length;
     h+=`<div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:10px;background:#fff">
       <div style="cursor:pointer" onclick="startSkill('${sk}')">
-        <b style="color:var(--accent)">${SKILLS[sk]}</b> · ${items.length}${t.items}${t.plusConv}${done?`${t.doneN}${done}`:''}
+        <b style="color:var(--accent)">${SKILLS[sk]}</b>
+        <span class="sub" style="font-size:12px;margin-left:6px">${t.progCore(cd,core.length)}${opt.length?' · '+t.progOpt(od,opt.length):''}${t.plusConv}</span>
         <div style="font-size:13px;color:var(--sub);margin-top:4px">${SKILL_INTRO[sk].def}</div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startSkill('${sk}')">${t.startPractice}</button>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startSkill('${sk}')">${cd&&cd<core.length?t.contCore(cd+1):t.startPractice}</button>
         <button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="convPicker('${sk}')">${t.convNow}</button>
+        ${cd+od?`<button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>`:''}
       </div></div>`;
   }
   h+=`<div style="margin-top:20px;border-top:1px dashed var(--line);padding-top:12px">
@@ -645,15 +753,23 @@ const LV=n=>t.lv[n]||'';
 function startSkill(sk){goalGate(sk,()=>teachPage(sk));}
 function teachPage(sk){
   narrow();
-  // 同一级内：标准题在前，找错改错题在后
-  queue=ITEMS.filter(i=>i.skill===sk).sort((a,b)=>((a.level||2)-(b.level||2))||((a.type==='fix')-(b.type==='fix')));qi=0;
+  const core=modItems(sk,'core'),opt=modItems(sk,'opt');
+  const cd=core.filter(isDone).length,od=opt.filter(isDone).length,nx=firstUndone(core);
+  queue=core;qi=0;QMODE='core';
+  const progBox=(cd+od)?`<div class="sumbox" style="margin:0 0 14px">
+      <b>${t.lastTime}</b>${t.progCore(cd,core.length)}${opt.length?' · '+t.progOpt(od,opt.length):''}
+      ${cd>=core.length?`<div class="sub" style="font-size:13px;margin:4px 0 0">${t.allCoreDone}</div>`:''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${cd<core.length?`<button style="font-size:13px;padding:6px 14px" onclick="startQueue('${sk}','core')">${t.contCore(nx+1)}</button>`:''}
+        <button class="ghost" style="font-size:13px;padding:6px 14px" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>
+      </div></div>`:'';
   const s=SKILL_INTRO[sk];
   const critList=(CRITERIA[sk]||s.criteria||[]);
   CP={sk,i:0,pick:null,crit:null};
   const demoHtml=`<div style="font-size:14px;margin-top:6px"><b>${t.pairsTitle}</b>
       <span class="sub" style="font-size:12px">${t.pairIntro}</span></div>
     <div id="pairbox"></div>`;
-  $('#app').innerHTML=`<div class="card">${stageBar(1)}${goalLine()}<span class="tag">${s.name} · ${t.demoTitle}</span>
+  $('#app').innerHTML=`<div class="card">${stageBar(1)}${goalLine()}${progBox}<span class="tag">${s.name} · ${t.demoTitle}</span>
     <p style="margin-bottom:8px"><b>${s.def}</b></p>
     <p class="sub" style="font-size:14px;margin-bottom:14px">${s.why}</p>
     <div style="font-size:14px"><b>${t.criteria}</b><span class="sub" style="font-size:12px">${t.criteriaNote}</span></div>
@@ -664,9 +780,13 @@ function teachPage(sk){
     <ul style="font-size:14px;margin:4px 0 14px 20px">${s.pitfalls.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
     ${demoHtml}
     <p class="sub" style="font-size:12px;margin-top:12px">${t.placeholderNote}</p>
-    <button onclick="showItem()">${t.startPractice}（${queue.length}${t.items}）</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="startQueue('${sk}','core',${cd>=core.length})">${cd?(cd<core.length?t.contCore(nx+1):t.redoCore):t.startCore}（${core.length}${t.items}）</button>
+    ${opt.length?`<button class="ghost" onclick="startQueue('${sk}','opt')">${t.optBtn(od,opt.length)}</button>`:''}
+    ${cd+od?`<button class="ghost" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>`:''}
     <button class="ghost" onclick="convPicker('${sk}')">${t.jumpConv}</button>
-    <button class="ghost" onclick="home()">${t.back}</button></div>`;
+    <button class="ghost" onclick="home()">${t.back}</button></div>
+    ${opt.length?`<div class="sub" style="font-size:12px;margin:8px 0 0">${t.optNote}</div>`:''}</div>`;
   drawPair();
 }
 /* 对比例子：先选哪句更深 → 再选差在哪条标准 → 揭示解释。选择落日志，可看练习前的辨别力。 */
@@ -703,7 +823,8 @@ function pairCrit(i){
 function pairNext(){CP.i++;CP.pick=null;CP.crit=null;drawPair();}
 function showItem(){
   if(qi>=queue.length){return finish();}
-  cur=queue[qi];attempt=1;
+  cur=queue[qi];
+  attempt=(HIST[cur.id]||[]).length+1;ROUND_BASE=attempt-1;
   render();
 }
 function sideRef(){
@@ -717,6 +838,7 @@ function sideRef(){
   return `<div class="card" style="border-color:var(--accent)">
     <button onclick="convPicker('${cur.skill}')" style="width:100%;margin-top:0;font-size:14px;padding:8px 12px">${t.jumpConv}</button>
     <div class="sub" style="font-size:12px;margin-top:6px;text-align:center">${t.jumpConvNote}</div>
+    <button class="ghost" onclick="moduleSummary('${cur.skill}')" style="width:100%;margin-top:8px;font-size:14px;padding:8px 12px">${t.sumBtn}</button>
   </div>
   <div class="card">
     <h4>${t.refTitle} · ${s.name}</h4>
@@ -773,7 +895,7 @@ async function fixCheck(k){
     const r=await api('/api/fix_check',{method:'POST',body:JSON.stringify({item_id:cur.id,choice:k,user:USER,lang:LANG})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'check failed');
-    FIXDONE[cur.id]={choice:k,correct:d.correct,answer:d.answer,note:d.note};
+    FIXDONE[cur.id]={choice:k,correct:d.correct,answer:d.answer,note:d.note};PROG.fix=FIXDONE;saveProg();
     render($('#resp')?$('#resp').value:'');
   }catch(e){
     $('#fixres').innerHTML=`<div class="err">${e.message}</div>`;
@@ -788,7 +910,7 @@ function render(prevResp){
   $('#app').innerHTML=`<div class="cols"><div>
   <div class="card">
     ${stageBar(2)}${goalLine()}
-    <span class="tag">${s.name} · ${isFix?t.fixTag+' · ':''}${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
+    <span class="tag">${s.name} · ${cur.optional?t.opt+' · ':''}${isFix?t.fixTag+' · ':''}${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
     ${isFix?`<div class="sub" style="font-size:13px;margin:8px 0">${t.fixIntro}</div>`:''}
     <div class="bg">${cur.background}</div>
     <div class="ctx">${cur.context.replace(/\n/g,'<br>')}</div>
@@ -822,15 +944,16 @@ async function submit(){
                            self_layer:myLayer,user:USER,lang:LANG})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'请求失败');
-    showFeedback(d.feedback,resp,myLayer,d.layer_canon);
+    showFeedback(d.feedback,resp,myLayer,d.layer_canon,d.ts);
   }catch(e){
     $('#fb').innerHTML=`<div class="err">${e.message}（可重试）</div>`;
   }finally{$('#go').disabled=false;$('#spin').style.display='none';}
 }
-function showFeedback(f,resp,myLayer,realLayer){
+function showFeedback(f,resp,myLayer,realLayer,ts){
   const v=f.verdict;
   results[cur.id]=v;
-  (HIST[cur.id]=HIST[cur.id]||[]).push({attempt,resp,f});
+  (HIST[cur.id]=HIST[cur.id]||[]).push({attempt,resp,f,ts:(ts||nowTs()),my:myLayer||null,real:realLayer||null});
+  PROG.hist=HIST;saveProg();
   // 先判层对照：学员自判 vs 督导判定的落点
   let calHtml='';
   if(myLayer&&realLayer){
@@ -850,7 +973,7 @@ function showFeedback(f,resp,myLayer,realLayer){
   if(f.comment)rows.push([t.comment,f.comment]);
   if(f.why_it_matters)rows.push([t.whyMatters,f.why_it_matters]);
   if(f.rewrite_hint)rows.push([v==='hit'?t.hintMore:t.hintFix,f.rewrite_hint]);
-  const canRetry=attempt<3&&v!=='hit';
+  const canRetry=(attempt-ROUND_BASE)<3&&v!=='hit';
   $('#fb').innerHTML=`${calHtml}<div class="fb ${v}"><div class="verdict">${vLabel(v)}</div>
     <div class="meta">
       ${f.response_type?`<span>${t.respType}: ${esc2(f.response_type)}</span>`:''}
@@ -910,7 +1033,7 @@ function diffCheck(lv,nextLv){
 function diffAns(lv,ans){
   api('/api/annotate',{method:'POST',
     body:JSON.stringify({key:'diffcheck:'+(cur?cur.skill:'')+':L'+lv,agree:true,note:'难度自评:'+ans,user:USER})}).catch(()=>{});
-  const redo=()=>{const sk=queue[0].skill;const lvItems=ITEMS.filter(i=>i.skill===sk&&i.level==lv);queue.splice(qi,0,...lvItems);showItem();};
+  const redo=()=>{const sk=queue[0].skill;const lvItems=ITEMS.filter(i=>i.skill===sk&&i.level==lv&&(!!i.optional===(QMODE==='opt')));queue.splice(qi,0,...lvItems);showItem();};
   if(ans==='too_easy'){showItem();return;}
   const msg=ans==='good'?t.msgGood:t.msgHard;
   $('#diffnext').innerHTML=`<p class="sub" style="margin-top:12px">${msg}</p>
@@ -920,10 +1043,128 @@ function diffAns(lv,ans){
 function finish(){
   narrow();
   const sk=queue[0].skill;
+  if(QMODE==='opt'){return moduleSummary(sk,t.finishOpt);}
   $('#app').innerHTML=`<div class="card">${stageBar(2)}<b>${t.finishTitle}</b>
     <p class="sub" style="margin-top:8px">${t.finishSub}</p>
     <button onclick="convPicker('${sk}')">${t.startConv}</button>
+    <button class="ghost" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>
+    ${modItems(sk,'opt').length?`<button class="ghost" onclick="startQueue('${sk}','opt')">${t.optBtn(modItems(sk,'opt').filter(isDone).length,modItems(sk,'opt').length)}</button>`:''}
     <button class="ghost" onclick="home()">${t.backFirst}</button></div>`;
+}
+
+/* ================= 模块小结（随时可看，规则统计，不调模型） ================= */
+const LAYER_ORDER={none:0,content:1,feeling:2,meaning:3};
+function moduleSummary(sk,headline){
+  narrow();
+  const s=SKILL_INTRO[sk];
+  const crit=(CRITERIA[sk]||s.criteria||[]);
+  const its=ITEMS.filter(i=>i.skill===sk&&isDone(i));
+  const atts=[];its.forEach(i=>(HIST[i.id]||[]).forEach(x=>atts.push(x)));
+  const core=modItems(sk,'core'),opt=modItems(sk,'opt');
+  const cd=core.filter(isDone).length,od=opt.filter(isDone).length;
+  const btns=`<div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${cd<core.length?`<button onclick="startQueue('${sk}','core')">${t.contCore(firstUndone(core)+1)}</button>`:''}
+      ${opt.length&&od<opt.length?`<button class="ghost" onclick="startQueue('${sk}','opt')">${t.optBtn(od,opt.length)}</button>`:''}
+      <button class="ghost" onclick="convPicker('${sk}')">${t.convNow}</button>
+      <button class="ghost" onclick="historyPage('${sk}')">${t.histBtn}</button>
+      <button class="ghost" onclick="home()">${t.home}</button></div>`;
+  if(!atts.length){
+    $('#app').innerHTML=`<div class="card"><span class="tag">${t.sumTitle(s.name)}</span><p class="sub" style="margin:10px 0">${t.sumEmpty}</p>${btns}</div>`;return;
+  }
+  // 每题最近一次判定、首次命中、改写后命中
+  const vc={hit:0,partial:0,miss:0};let first=0,improved=0;
+  its.forEach(i=>{const a=HIST[i.id];const lv=a[a.length-1].f.verdict;if(vc[lv]!==undefined)vc[lv]++;
+    if(a[0].f.verdict==='hit')first++;else if(a.some(x=>x.f.verdict==='hit'))improved++;});
+  // 三条标准没做到的次数
+  const cf=[0,0,0],cn=[0,0,0];
+  atts.forEach(x=>(x.f.criteria||[]).forEach((c,k)=>{if(k<3&&c&&c.ok!==null&&c.ok!==undefined){cn[k]++;if(c.ok===false)cf[k]++;}}));
+  // 没命中时的回应类型
+  const tc={};atts.filter(x=>x.f.verdict!=='hit').forEach(x=>{const ty=(x.f.response_type||'').trim();
+    if(ty&&!/^(反映|reflection)$/i.test(ty))tc[ty]=(tc[ty]||0)+1;});
+  const types=Object.entries(tc).sort((a,b)=>b[1]-a[1]);
+  // 落点层次
+  const lc={content:0,feeling:0,meaning:0,none:0};atts.forEach(x=>{const l=x.real||null;if(l&&lc[l]!==undefined)lc[l]++;});
+  const lt=Object.values(lc).reduce((a,b)=>a+b,0)||1;
+  const shallow=atts.filter(x=>x.real&&x.real!=='none'&&LAYER_ORDER[x.real]<LAYER_ORDER[sk]).length;
+  // 自判准确、找错识别
+  const calA=atts.filter(x=>x.my&&x.real),calOk=calA.filter(x=>x.my===x.real).length;
+  const fixIts=ITEMS.filter(i=>i.skill===sk&&i.type==='fix'&&FIXDONE[i.id]);
+  const fixOk=fixIts.filter(i=>FIXDONE[i.id].correct).length;
+  // 下一步：最多三条，按问题大小排
+  const tips=[];
+  const worst=cf.map((v,k)=>[k,v,cn[k]]).filter(x=>x[2]>=2&&x[1]/x[2]>=0.3).sort((a,b)=>b[1]/b[2]-a[1]/a[2])[0];
+  if(worst)tips.push(t.sumCritTip(worst[0]+1,crit[worst[0]]||'',worst[1],worst[2]));
+  if(types.length&&types[0][1]>=2){const ty=types[0][0];tips.push(t.sumTypeTip(ty,types[0][1])+((t.typeTip[ty]||t.typeTip[ty.toLowerCase()])||''));}
+  if(sk!=='content'&&shallow>=2)tips.push(t.sumShallowTip(shallow,t.layerNames[sk]));
+  if(calA.length>=3&&calOk/calA.length<0.6)tips.push(t.sumCalTip(calOk,calA.length));
+  if(!tips.length)tips.push(atts.length<3?t.sumFew:(vc.hit/Math.max(its.length,1)>=0.6?t.sumOk:t.sumMixed));
+  const bar=(label,n,tot,hl)=>`<div class="lbar ${hl?'target':''}"><span>${label}</span><div class="track"><div class="fill" style="width:${tot?Math.round(n/tot*100):0}%"></div></div><span>${n}</span></div>`;
+  $('#app').innerHTML=`<div class="card">
+    ${headline?`<div style="font-weight:700;margin-bottom:8px">${headline}</div>`:''}
+    <span class="tag">${t.sumTitle(s.name)}</span>
+    <div class="sub" style="margin:6px 0 10px">${t.sumBasis(its.length,atts.length)} · ${t.progCore(cd,core.length)}${opt.length?' · '+t.progOpt(od,opt.length):''}</div>
+    <div class="notecard">
+      <h4>${t.sumNext}</h4>
+      <ul style="margin:0 0 0 18px;font-size:14px;line-height:1.8">${tips.map(x=>`<li>${esc2(x)}</li>`).join('')}</ul>
+      <h4>${t.sumVerdicts}</h4>
+      <div style="font-size:14px">${t.cHit} ${vc.hit} · ${t.cPartial} ${vc.partial} · ${t.cMiss} ${vc.miss}
+        <span class="sub" style="font-size:12px;margin-left:8px">${t.sumFirstHit(first,its.length)} · ${t.sumImproved(improved)}</span></div>
+      <h4>${t.sumCrit}</h4>
+      ${crit.map((c,k)=>bar(`${k+1}`,cf[k],cn[k],worst&&worst[0]===k)+`<div class="sub" style="font-size:11px;margin:0 0 2px 72px">${esc2(c)}</div>`).join('')}
+      ${types.length?`<h4>${t.sumTypes}</h4>${types.map(([ty,n])=>bar(esc2(ty),n,types.reduce((a,b)=>a+b[1],0),false)).join('')}`:''}
+      <h4>${t.sumLayers}</h4>
+      ${['content','feeling','meaning','none'].map(k=>bar(t.layerNames[k],lc[k],lt,k===sk)).join('')}
+      <div style="font-size:13px;margin-top:10px">${calA.length?t.sumCal(calOk,calA.length):''}${fixIts.length?' · '+t.sumFix(fixOk,fixIts.length):''}</div>
+    </div>
+    ${btns}</div>`;
+}
+/* ================= 我的练习记录 ================= */
+function historyPage(sk){
+  narrow();
+  const sks=Object.keys(SKILLS);
+  sk=sk&&SKILLS[sk]?sk:sks[0];
+  const vb=v=>`<span class="badge ${v}">${vLabel(v)}</span>`;
+  const itemRow=it=>{
+    const a=HIST[it.id]||[];
+    const head=`<span class="sub" style="font-size:11px">[${it.optional?t.opt:t.core}${it.type==='fix'?' · '+t.fixTag:''} · ${LV(it.level)}]</span> ${esc2((it.utterance||'').slice(0,34))}…`;
+    if(!a.length)return `<div style="font-size:13px;color:var(--sub);padding:6px 0;border-bottom:1px solid var(--line)">${head} <span class="badge" style="background:var(--bg)">${t.histNotDone}</span></div>`;
+    const last=a[a.length-1];
+    return `<details style="border-bottom:1px solid var(--line);padding:6px 0">
+      <summary style="cursor:pointer;font-size:13px">${head} ${vb(last.f.verdict)} <span class="sub" style="font-size:11px">${t.histAttempts(a.length)} · ${(last.ts||'').slice(0,10)}</span></summary>
+      <div class="utt" style="font-size:13px;margin:8px 0">${esc2(it.utterance)}</div>
+      ${a.map(x=>`<div class="hist"><div class="r">${t.histRound(x.attempt)} ${vb(x.f.verdict)} <span class="sub">${(x.ts||'').slice(5,16)}</span>
+          ${x.my&&x.real?` · ${t.histYourCall}：${t.layerNames[x.my]} / ${t.histLanded}：${t.layerNames[x.real]}`:''}</div>
+        <div style="font-size:13px">${esc2(x.resp)}</div>
+        ${x.f.comment?`<div class="sub" style="font-size:12px;margin:3px 0 0">${esc2(x.f.comment)}</div>`:''}</div>`).join('')}
+    </details>`;
+  };
+  const its=[...modItems(sk,'core'),...modItems(sk,'opt')];
+  const convs=PROG.convs.map((c,i)=>[c,i]).filter(([c])=>c.skill===sk).reverse();
+  $('#app').innerHTML=`<div class="card">
+    <span class="tag">${t.histTitle2}</span>
+    <div class="pick" style="margin:10px 0 12px">${sks.map(k=>`<button class="${k===sk?'sel':''}" onclick="historyPage('${k}')">${SKILLS[k]}</button>`).join('')}</div>
+    ${its.some(isDone)?its.map(itemRow).join(''):`<div class="sub" style="margin:0">${t.histNoItems}</div>`}
+    <h4 style="font-size:14px;color:var(--accent);margin:16px 0 6px">${t.histConvTitle}</h4>
+    ${convs.length?convs.map(([c,i])=>{const v=c.verdicts||[];
+      return `<div style="border-bottom:1px solid var(--line);padding:8px 0;font-size:13px">
+        <b>${(c.ts||'').slice(0,16)}</b> · ${esc2(c.category||'')} · ${t.cHit} ${v.filter(x=>x==='hit').length}/${v.length}
+        ${sparkline(c.understood_curve||[])}
+        ${c.summary&&c.summary.direction?`<div class="sub" style="font-size:12px;margin:2px 0 0">${t.smDirection}：${esc2(c.summary.direction)}</div>`:''}
+        <button class="ghost" style="font-size:12px;padding:4px 12px;margin-top:6px" onclick="openSavedNote(${i})">${t.histOpenNote}</button></div>`;}).join('')
+      :`<div class="sub" style="margin:0">${t.histNoConv}</div>`}
+    <p class="sub" style="font-size:11px;margin:14px 0 0">${t.histLocalNote}</p>
+    <button class="ghost" onclick="home()">${t.home}</button></div>`;
+}
+function openSavedNote(i){
+  const c=PROG.convs[i];if(!c)return;
+  narrow();DEBRIEF_JUDGE={};
+  const prevConv=CONV;CONV={skill:c.skill};
+  const card=noteCard(c,true);CONV=prevConv;
+  $('#app').innerHTML=`<div class="card">${stageBar(3)}
+    <span class="tag">${(c.ts||'').slice(0,16)} · ${esc2(c.category||'')}</span>
+    ${card}
+    ${c.summary?`<div class="sumbox"><dt>${t.smPattern}</dt><dd>${esc2(c.summary.pattern||'—')}</dd><dt>${t.smDirection}</dt><dd>${esc2(c.summary.direction||'—')}</dd></div>`:''}
+    <button class="ghost" onclick="historyPage('${c.skill}')">${t.histBack}</button></div>`;
 }
 
 /* ================= 对话练习 ================= */
@@ -1122,7 +1363,7 @@ function judgeHtml(){
   }).join('');
   return `<div style="font-size:13px;font-weight:700">${t.noteAgree(agree,ks.length)}</div>${rows}`;
 }
-function noteCard(d){
+function noteCard(d,noJudge){
   const L=d.layers||[];
   const cnt={content:0,feeling:0,meaning:0,none:0};
   L.forEach(k=>{if(cnt[k]!==undefined)cnt[k]++;});
@@ -1140,12 +1381,17 @@ function noteCard(d){
     ${d.understood_curve&&d.understood_curve.length>1?`<h4>${t.noteCurve}</h4>${bigCurve(d.understood_curve,lines)}
       <div class="sub" style="font-size:11px;margin:2px 0 0">${t.noteCurveTip}</div>`:''}
     ${L.length?`<h4>${t.noteLayers}</h4>${bars}`:''}
-    <h4>${t.noteJudge}</h4><div id="judgebox">${judgeHtml()}</div>
+    ${noJudge?'':`<h4>${t.noteJudge}</h4><div id="judgebox">${judgeHtml()}</div>`}
   </div>`;
 }
 function drawDebrief(d){
   narrow();
   DEBRIEF=d;
+  if(d.session&&!PROG.convs.some(c=>c.session===d.session)){
+    PROG.convs.push({ts:d.ts||nowTs(),session:d.session,skill:d.skill||(CONV&&CONV.skill),case:d.case,category:d.category,
+      verdicts:d.verdicts,layers:d.layers,understood_curve:d.understood_curve,summary:d.summary,transcript:d.transcript});
+    saveProg();
+  }
   loadGoal();  // 服务器已把本次改进方向存为新目标，刷新置顶横幅
   const vc={hit:0,partial:0,miss:0};d.verdicts.forEach(v=>{if(vc[v]!==undefined)vc[v]++;});
   const sm=d.summary||{};
