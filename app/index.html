@@ -103,6 +103,33 @@
   .badge.miss{background:var(--missbg);color:var(--miss)}
   .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
   .meta span{font-size:11px;padding:1px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);color:var(--sub)}
+  /* ---- 三阶段循环 v1 ---- */
+  .stages{display:flex;gap:6px;margin-bottom:14px;font-size:12px}
+  .stages span{flex:1;text-align:center;padding:5px 0;border-radius:99px;background:var(--bg);color:var(--sub);border:1px solid var(--line)}
+  .stages span.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  .stages span.done{color:var(--accent);border-color:var(--accent)}
+  .pick{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .pick button{margin-top:0;font-size:13px;padding:6px 14px;border-radius:99px;background:#fff;color:var(--accent)}
+  .pick button.sel{background:var(--accent);color:#fff}
+  .pick button:disabled{opacity:1;cursor:default}
+  .calline{font-size:14px;padding:8px 12px;border-radius:8px;margin-bottom:10px;background:#fff;border:1px solid var(--line)}
+  .calline .ok{color:var(--hit);font-weight:700} .calline .off{color:var(--partial);font-weight:700}
+  .flawed{border-left:3px solid var(--miss);background:var(--missbg);border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;font-size:15px}
+  .pairopt{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);
+           padding:10px 14px;margin-top:8px;font-size:15px;line-height:1.6}
+  .pairopt:hover{border-color:var(--accent)}
+  .pairopt.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .pairopt.good{border-color:var(--hit);background:var(--hitbg)} .pairopt.bad{border-color:var(--miss);background:var(--missbg)}
+  .pairopt b{color:var(--accent);margin-right:6px}
+  .notecard{border:1px solid var(--accent);border-radius:10px;padding:14px 18px;margin:8px 0 14px}
+  .notecard h4{font-size:14px;color:var(--accent);margin:12px 0 6px}
+  .notecard h4:first-child{margin-top:0}
+  .lbar{display:grid;grid-template-columns:64px 1fr 28px;align-items:center;gap:8px;font-size:13px;margin-top:5px}
+  .lbar .track{height:10px;border-radius:5px;background:var(--bg)}
+  .lbar .fill{height:10px;border-radius:5px;background:var(--line)}
+  .lbar.target .fill{background:var(--accent)}
+  .lbar.target span:first-child{color:var(--accent);font-weight:700}
+  .jrow{font-size:13px;margin-top:4px}
   @media (max-width:900px){.cols{grid-template-columns:1fr}.side{position:static;max-height:none}}
 </style>
 </head>
@@ -127,8 +154,32 @@ const T={
   histTitle:'你这道题的历次反馈',histRound:n=>`第 ${n} 次作答`,histNone:'提交后，历次反馈会留在这里，方便对照修改。',
   critTitle:'技术标准核对',respType:'回应类型',landLayer:'落在哪一层',
   jumpConv:'直接进入对话练习',jumpConvNote:'不必做完题目，随时可以进',
+  stages:['① 定锚','② 试答','③ 回看'],
+  goalTitle:'开练前：给这次定一个小目标',
+  goalSub:'刻意练习的第一步，是清楚这一次要练什么。一句话就够。',
+  goalLast:'上次复盘给你的方向：',goalKeep:'继续这个方向',goalOr:'或者换一个：',
+  goalFirst:'写一句这次想练的（可以跳过）：',goalPh:'例如：把情绪词说得具体一点',
+  goalSave:'就定这个',goalSkip:'先跳过',goalEmpty:'先写一句，或者点「先跳过」。',
+  goalFromPros:'（你开练前定的）',goalWasPros:'——你开练前给自己定的目标是：',
+  layerAsk:'提交前先判断：你觉得这句接住了哪一层？',layerNames:{content:'内容',feeling:'情感',meaning:'意义',none:'没接住'},
+  needLayer:'先选一下你觉得这句接住了哪一层。',
+  calYou:'你的判断：',calReal:'实际落点：',calOk:'✓ 判断准确',calOff:'判断偏了',
+  calTally:(a,b)=>`本模块判断准确 ${a}/${b}`,calTitle:'自我判断',calTallyNote:'每题提交前的自判，与督导判定的落点对照',
+  pairsTitle:'比一比',pairN:(a,b)=>`第 ${a}/${b} 对`,
+  pairIntro:'同一句来访者的话，两句回应。先自己判断，再看解释。',
+  pairAsk:'哪一句接得更深？',pairWhy:'差的那一句，主要没做到哪一条技术标准？',
+  pairRight:'✓ 选对了',pairWrong:'另一句更好',critRight:'✓ 找准了',critWrong:n=>`主要是第 ${n} 条`,
+  pairNext:'下一对',pairAllDone:'三对都比完了。',pairBetter:'较好',pairWorse:'偏离',
+  fixTag:'找错改错',fixIntro:'下面这句咨询师的回应有问题。先找出问题在哪，再把它改写成一句反映。',
+  fixFlawed:'有问题的回应：',fixAsk:'它主要错在哪？',
+  errNames:{advice:'给建议',reassure:'急着宽慰',question:'在提问',explain_other:'替别人解释',vague_emotion:'情绪词太笼统',surface_only:'只复述了表层'},
+  fixRight:'✓ 找对了',fixWrong:n=>`不是这个——主要问题是「${n}」`,fixNow:'现在把它改写成一句反映：',
+  noteTitle:'这次的练习笔记',noteCurve:'来访者的被理解感',noteCurveTip:'悬停在点上，看是你哪一句带来的变化',
+  noteOpen:'开场',noteLayers:'你的回应落在哪一层',noteTarget:'← 本次重点',
+  noteJudge:'你的判断 vs 实际',noteJudgeEmpty:'在下面回放关键时刻时先做判断，对照会出现在这里。',
+  noteJudgeRow:(i,g,v,ok)=>`时刻 ${i}：你判断「${g}」，实际「${v}」 ${ok}`,noteAgree:(a,b)=>`判断一致 ${a}/${b}`,
   exBtn:'看一个示范句',exWait:'督导在写示范…',exTitle:'示范',exWhy:'这句示范做到了',
-  exNone:'本模块（意义反映）只在未命中时提供示范——你已经命中了。',
+  exNone:'本模块（意义反映）不再提供示范——这一周由「找错改错」题代替。',
   exHint:'示范只供对照，不必照抄；你的原句和它各有取舍。',
   convNow:'对话练习',backItems:'回到题目',
   whyMatters:'来访者此刻会怎样',clientSaid:'来访者：',yourResp:'你写的：',
@@ -138,7 +189,7 @@ const T={
   startPractice:'开始练习',back:'返回',backList:'返回列表',
   qOf:(a,b)=>`第 ${a}/${b} 题`,attempt:n=>`第 ${n} 次作答`,
   respLabel:n=>`请用一句${n}回应他／她：`,
-  selfRate:'自评（可选）：你觉得这句反映的质量如何？',selfRateNote:'不评不影响练习',unrated:'未评',
+  selfRate:'有多大把握？',selfRateNote:'选填',unrated:'未评',
   submit:'提交，看反馈',grading:'督导批改中…（约 10 秒，会逐条核对技术标准）',needResp:'先写下你的回应。',
   vHit:'✓ 命中',vPartial:'◐ 部分命中',vMiss:'✗ 脱靶',
   captured:'你接住了',stillMiss:'还差在哪',noteIf:'可留意',comment:'督导点评',
@@ -204,8 +255,32 @@ const T={
   histTitle:'Your feedback on this item',histRound:n=>`attempt ${n}`,histNone:'After you submit, each round of feedback stays here so you can compare while revising.',
   critTitle:'Criteria check',respType:'Response type',landLayer:'Landed on',
   jumpConv:'Go straight to conversation practice',jumpConvNote:'No need to finish the items first',
+  stages:['① Anchor','② Attempt','③ Reflect'],
+  goalTitle:'Before you start: set a small goal for this session',
+  goalSub:'The first step of deliberate practice is knowing what this round is for. One line is enough.',
+  goalLast:'The direction from your last debrief: ',goalKeep:'Keep this direction',goalOr:'Or set a different one:',
+  goalFirst:'Write one line about what you want to practise (optional):',goalPh:'e.g. make my feeling words more specific',
+  goalSave:'Set this goal',goalSkip:'Skip for now',goalEmpty:'Write a line first, or choose "Skip for now".',
+  goalFromPros:'(set by you before practising)',goalWasPros:' — the goal you set yourself before this session was: ',
+  layerAsk:'Before you submit: which layer do you think this caught?',layerNames:{content:'Content',feeling:'Feeling',meaning:'Meaning',none:'Didn\'t catch it'},
+  needLayer:'First choose which layer you think this caught.',
+  calYou:'Your call: ',calReal:'Where it landed: ',calOk:'✓ accurate call',calOff:'call was off',
+  calTally:(a,b)=>`Accurate calls in this module: ${a}/${b}`,calTitle:'Self-judgment',calTallyNote:'Your pre-submission call, checked against the layer the supervisor found',
+  pairsTitle:'Compare',pairN:(a,b)=>`pair ${a}/${b}`,
+  pairIntro:'One client statement, two responses. Decide for yourself first, then see the explanation.',
+  pairAsk:'Which one goes deeper?',pairWhy:'Which criterion does the weaker one mainly miss?',
+  pairRight:'✓ Right',pairWrong:'The other one is better',critRight:'✓ Spot on',critWrong:n=>`Mainly criterion ${n}`,
+  pairNext:'Next pair',pairAllDone:'All three pairs done.',pairBetter:'better',pairWorse:'departure',
+  fixTag:'Find and fix',fixIntro:'The counsellor response below has a problem. First find what is wrong with it, then rewrite it as a reflection.',
+  fixFlawed:'The flawed response: ',fixAsk:'What is mainly wrong with it?',
+  errNames:{advice:'Giving advice',reassure:'Rushing to reassure',question:'Asking a question',explain_other:'Explaining someone else',vague_emotion:'Feeling word too vague',surface_only:'Only restates the surface'},
+  fixRight:'✓ Found it',fixWrong:n=>`Not quite — the main problem is "${n}"`,fixNow:'Now rewrite it as a reflection:',
+  noteTitle:'Your practice notes',noteCurve:'How understood the client felt',noteCurveTip:'Hover over a point to see which of your lines moved it',
+  noteOpen:'start',noteLayers:'Where your responses landed',noteTarget:'← this session\'s focus',
+  noteJudge:'Your call vs what happened',noteJudgeEmpty:'Judge the key moments below first; the comparison will appear here.',
+  noteJudgeRow:(i,g,v,ok)=>`Moment ${i}: you said "${g}", it was "${v}" ${ok}`,noteAgree:(a,b)=>`Matching calls ${a}/${b}`,
   exBtn:'Show a worked example',exWait:'Writing an example…',exTitle:'Worked example',exWhy:'What it achieves',
-  exNone:'In this module (reflection of meaning) an example appears only after a miss, and you hit it.',
+  exNone:'This module (reflection of meaning) no longer offers worked examples — this week, find-and-fix items take their place.',
   exHint:'The example is for comparison, not for copying; your own sentence made different choices.',
   convNow:'Conversation practice',backItems:'Back to the items',
   whyMatters:'What the client does next',clientSaid:'Client: ',yourResp:'You wrote: ',
@@ -215,7 +290,7 @@ const T={
   startPractice:'Start practising',back:'Back',backList:'Back to list',
   qOf:(a,b)=>`item ${a}/${b}`,attempt:n=>`attempt ${n}`,
   respLabel:n=>`Respond with one ${n}:`,
-  selfRate:'Self-rating (optional): how good was that reflection?',selfRateNote:'skipping it changes nothing',unrated:'not rated',
+  selfRate:'How confident are you?',selfRateNote:'optional',unrated:'not rated',
   submit:'Submit for feedback',grading:'Supervisor is reading… (about 10s — each criterion is checked)',needResp:'Write your response first.',
   vHit:'✓ Hit',vPartial:'◐ Partial',vMiss:'✗ Miss',
   captured:'What you caught',stillMiss:'What was missing',noteIf:'Worth noting',comment:'Supervisor comment',
@@ -355,17 +430,145 @@ const SKILL_INTRO_ZH={
       r:'你这是典型的回避型依恋，从小和父亲的关系模式决定了你们现在没法沟通。',tag:'bad',badtype:'常见偏离 · 过度解释／贴标签',note:'把活人装进了术语盒子。哪怕分析是对的，此刻它也只会让对方防御——反映是陪他看见，不是替他诊断。'}]}};
 const SKILL_INTRO_ALL={zh:SKILL_INTRO_ZH,en:SKILL_INTRO_EN};
 let SKILL_INTRO=SKILL_INTRO_ALL[LANG];
+
+/* ---- 对比例子（三阶段循环 ① 定锚）：同一句来访者的话，两句回应只差一处关键点。
+   better=较好的一句；crit=较差那句主要没做到的技术标准序号（0/1/2，对应三条标准）。 ---- */
+const PAIRS_ZH={
+ content:[
+  {c:'我投了三十多份简历，就两家回了，还都是一面就挂。现在打开招聘软件手都是凉的。',
+   a:'你投了三十多份简历，就两家回了，还都是一面就挂，现在打开招聘软件手都是凉的。',
+   b:'三十多份投出去，只有两家有回音，面试也都没过——到现在一打开招聘软件就发怵。',
+   better:'b',crit:0,note:'A 几乎逐字照搬，听起来像录音回放；B 用自己的话把三件事（投得多、回得少、面试挂）带全，还把"手都是凉的"换成了自己的说法。'},
+  {c:'我妈每天晚上十一点给我打视频，查我在不在宿舍。我都大三了。',
+   a:'每天晚上十一点，你妈都要视频确认你在宿舍——而你已经大三了。',
+   b:'你是说你妈每天晚上都打视频查你在不在宿舍，对吗？',
+   better:'a',crit:1,note:'B 内容没错，但用"对吗"收尾，把反映变成了核对题，来访者得先回答你；A 用陈述句把事情放回给他，他可以直接往下说。'},
+  {c:'这周加了三天班，回家还得盯孩子作业，我妈又住院了，我感觉自己被切成好几块。',
+   a:'那你有没有想过请个护工？或者跟领导说说少排点班？',
+   b:'三头都压在你身上——加班、孩子的作业、妈妈住院，你被拽着到处跑。',
+   better:'b',crit:2,note:'A 的方案也许有用，但此刻她要的是被听到，建议一出口，剩下的话就咽回去了；B 把三件事都接住了，没有追问也没有支招。'}],
+ feeling:[
+  {c:'组会上导师当着所有人说我的数据"一看就没认真做"，其实那组数据我跑了两个礼拜。',
+   a:'听起来你心里挺不舒服的。',
+   b:'跑了两个礼拜的数据，被当着所有人说"没认真做"——你又难堪又委屈。',
+   better:'b',crit:0,note:'A 的"不舒服"放在什么事上都成立，等于没命名；B 说出了"难堪"和"委屈"，还把它们挂在具体情境上：当众、两个礼拜。'},
+  {c:'室友又把我的外卖拿去吃了，第三次了，她还笑着说"反正你也吃不完"。',
+   a:'第三次了，她还笑着说你反正吃不完——你憋着一股火。',
+   b:'她这样，你是不是很生气？',
+   better:'a',crit:1,note:'B 猜得不算错，但问句把命名情绪的工作推回给了来访者；A 直接说出来，还保留了"憋着"的分寸——火是有的，只是没发出来。'},
+  {c:'室友用完我的东西从来不说，我提了一次，她们反而说我小气。',
+   a:'提出来反而被说小气，你觉得挺委屈的，好像在意这件事本身成了你的错。',
+   b:'室友之间难免的啦，别放在心上，大家没有恶意的。',
+   better:'a',crit:2,note:'B 两个偏离叠在一起：情绪被劝退，室友被开脱，她下次不会再提了；A 命名了"委屈"，还点出了委屈的结构——她的合理在意被反过来定了罪。'}],
+ meaning:[
+  {c:'我考上研那天第一个打给我奶奶，她已经听不太清了，一直在说"好，好"。',
+   a:'奶奶听不太清了，你心里挺难过的。',
+   b:'你第一个想告诉的人是奶奶——好像这份好消息，你最想让她亲耳听到、为你高兴。',
+   better:'b',crit:0,note:'A 停在情绪层，准确但没往下走；B 从"第一个打给奶奶"里听出了他在乎什么——想让她亲耳分享这一刻。'},
+  {c:'别人都说我这个专业好就业，可我每天做实验都在想，这真是我要过的日子吗。',
+   a:'好像你在意的不只是好不好就业，而是这样的日子是不是你自己选的、自己想要的。',
+   b:'你其实就是后悔选了这个专业，只是不敢承认。',
+   better:'a',crit:1,note:'B 把推测当成结论，还替他下了"不敢承认"的判断，他只能防御；A 用"好像"把意义递过去，给他留了修正的余地。'},
+  {c:'我爸生病之后，我每周都回去，可坐在那儿也不知道说什么，就刷手机。',
+   a:'你这是典型的回避型依恋，从小和父亲的关系模式决定了你们现在没法沟通。',
+   b:'你每周都到场，却觉得没真的"在"——好像你想给他的不只是人在，而是能靠近一点，只是还没找到路。',
+   better:'b',crit:2,note:'A 把活人装进了术语盒子，哪怕分析是对的，此刻也只会让人防御；B 从"刷手机"里听出了他想靠近的在乎，全程用"好像"留着余地。'}]};
+const PAIRS_EN={
+ content:[
+  {c:"I've sent out over thirty applications, two got back to me, and I didn't get past the first round at either. Now I open the job app and my hands go cold.",
+   a:"You've sent out over thirty applications, two got back to you, you didn't get past the first round at either, and now you open the job app and your hands go cold.",
+   b:"Thirty-plus applications out, two replies, and neither interview went anywhere — now just opening the app makes you freeze up.",
+   better:'b',crit:0,note:"A replays the sentence almost word for word and sounds like a recording. B carries all three facts in the counsellor's own words, and turns \"my hands go cold\" into its own phrasing."},
+  {c:"My mum video-calls me at eleven every night to check I'm in my room. I'm in my third year.",
+   a:"Every night at eleven your mum calls to check you're in your room — and you're in your third year.",
+   b:"So you're saying your mum calls every night to check you're in your room, is that right?",
+   better:'a',crit:1,note:"B gets the content right but ends on \"is that right?\", turning the reflection into a quiz the client must answer first. A hands the facts back as a statement, so they can simply keep going."},
+  {c:"I worked three extra shifts this week, then it's homework with my kid at night, and now my mother is in hospital. I feel like I've been cut into pieces.",
+   a:"Have you thought about hiring some help? Or asking your manager for fewer shifts?",
+   b:"Three things pulling at once — the extra shifts, your kid's homework, your mother in hospital. You're being dragged in every direction.",
+   better:'b',crit:2,note:"A's plan may even be sound, but right now she needs to be heard; once advice arrives, the rest of what she meant to say goes back down. B catches all three, with no question and no fix."}],
+ feeling:[
+  {c:"In lab meeting my advisor told everyone my data \"obviously wasn't done carefully\". I spent two weeks running that data.",
+   a:"It sounds like that didn't feel great.",
+   b:"Two weeks on that data, and it gets called careless in front of everyone — that's humiliating, and it stings as unfair.",
+   better:'b',crit:0,note:"\"Didn't feel great\" fits any event, so it names nothing. B names humiliation and unfairness and ties them to the situation: in front of everyone, after two weeks."},
+  {c:"My roommate ate my takeout again — third time — and just laughed and said \"you never finish it anyway\".",
+   a:"Third time, and she laughs it off with \"you never finish it anyway\" — you're holding in a lot of anger.",
+   b:"Does that make you really angry?",
+   better:'a',crit:1,note:"B's guess isn't wrong, but the question hands the work of naming back to the client. A says it outright and keeps the nuance of \"holding in\": the anger is there, it just hasn't come out."},
+  {c:"My roommates use my stuff and never mention it. I brought it up once and they told me I was being petty.",
+   a:"You raise it and get called petty for it — that lands as unfair, like caring about it at all became your fault.",
+   b:"That's pretty normal between roommates, honestly. Don't let it get to you — I'm sure they don't mean anything by it.",
+   better:'a',crit:2,note:"B stacks two departures: the feeling is talked out of existence and the roommates are acquitted, so she will not raise it again. A names the unfairness and its shape: her reasonable objection got turned into the offence."}],
+ meaning:[
+  {c:"The day I got into grad school, the first person I called was my grandma. She can barely hear any more. She just kept saying \"good, good\".",
+   a:"Your grandma can barely hear now, and that makes you sad.",
+   b:"She was the first person you wanted to tell — it sounds like, more than anyone, you wanted her to hear it and be proud of you.",
+   better:'b',crit:0,note:"A stops at the feeling layer: accurate, but it goes no further. B hears what \"the first person I called\" carries — he wanted to share this moment with her."},
+  {c:"Everyone says my major is great for jobs, but every day in the lab I wonder whether this is really the life I want.",
+   a:"It sounds like the question isn't really whether it leads to a job, but whether this is a life you chose and actually want.",
+   b:"You obviously regret your major, you just won't admit it.",
+   better:'a',crit:1,note:"B turns a guess into a verdict and adds a judgment about not admitting it, so all he can do is defend. A offers the meaning with \"it sounds like\" and leaves room for him to correct it."},
+  {c:"Since my dad got sick I go back every weekend. But I sit there with nothing to say and end up on my phone.",
+   a:"That's classic avoidant attachment — your early relationship with your father set the pattern you're both stuck in now.",
+   b:"You're there every week and still feel like you aren't really there — it sounds like what you want to give him isn't just presence but something closer, and you haven't found the way in.",
+   better:'b',crit:2,note:"A files a living person into a term; even if the analysis were right, right now it only produces defence. B hears in the phone what he actually wants — to get closer — and keeps \"it sounds like\" throughout."}]};
+const PAIRS_ALL={zh:PAIRS_ZH,en:PAIRS_EN};
+
 let ITEMS=[],SKILLS={},CRITERIA={},cur=null,attempt=1,results={},HIST={},RATE_TOUCHED=false;
 let USER=localStorage.getItem('psyclient_user')||'';
-let GOAL=null;
+let GOAL=null,GOAL_SRC=null;
+let GOAL_ASKED={},GOAL_NEXT=null;   // 本次打开页面里每个模块只问一次目标
+let SELF_LAYER=null;                // 当前作答的先判层
+let CAL={};                         // 每个模块的自判是否准确：{skill:[true,false,...]}
+let FIXDONE={};                     // 找错改错题第一步是否已完成：{item_id:{choice,correct,answer,note}}
+let CP=null;                        // 对比例子进度
 
 async function loadGoal(){
-  if(!USER){GOAL=null;return;}
-  try{const r=await api('/api/goal?user='+encodeURIComponent(USER));const d=await r.json();GOAL=d.goal||null;}
-  catch(e){GOAL=null;}
+  if(!USER){GOAL=null;GOAL_SRC=null;return;}
+  try{const r=await api('/api/goal?user='+encodeURIComponent(USER));const d=await r.json();GOAL=d.goal||null;GOAL_SRC=d.source||null;}
+  catch(e){GOAL=null;GOAL_SRC=null;}
 }
 function goalLine(){
-  return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${t.goalFrom}：${esc2(GOAL)}</div>`:'';
+  return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${GOAL_SRC==='prospective'?t.goalFromPros:t.goalFrom}：${esc2(GOAL)}</div>`:'';
+}
+/* 三阶段进度条：1 定锚 / 2 试答 / 3 回看 */
+function stageBar(n){
+  return `<div class="stages">${t.stages.map((s,i)=>`<span class="${i+1===n?'on':i+1<n?'done':''}">${s}</span>`).join('')}</div>`;
+}
+/* ① 定锚：开练前定目标。每个模块在本次打开页面时只问一次。 */
+function goalGate(sk,then){
+  if(GOAL_ASKED[sk])return then();
+  GOAL_ASKED[sk]=true;GOAL_NEXT=then;
+  narrow();
+  const s=SKILL_INTRO[sk];
+  $('#app').innerHTML=`<div class="card">${stageBar(1)}
+    <span class="tag">${s.name}</span>
+    <h2 style="margin:6px 0 6px;font-size:19px">${t.goalTitle}</h2>
+    <div class="sub" style="margin-bottom:14px">${t.goalSub}</div>
+    ${GOAL?`<div style="font-size:14px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:10px 14px">
+        ${t.goalLast}<b>${esc2(GOAL)}</b></div>
+      <button onclick="goalSet('keep')">${t.goalKeep}</button>
+      <label>${t.goalOr}</label>`:`<label>${t.goalFirst}</label>`}
+    <textarea id="goaltxt" style="min-height:56px" placeholder="${t.goalPh}"></textarea>
+    <div id="goalerr"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="goalSet('new')">${t.goalSave}</button>
+      <button class="ghost" onclick="goalSet('skip')">${t.goalSkip}</button>
+    </div></div>`;
+  window.__goalSkill=sk;
+}
+async function goalSet(action){
+  const sk=window.__goalSkill;
+  let goal='';
+  if(action==='keep')goal=GOAL;
+  if(action==='new'){
+    goal=($('#goaltxt').value||'').trim();
+    if(!goal){$('#goalerr').innerHTML=`<div class="err">${t.goalEmpty}</div>`;return;}
+  }
+  api('/api/goal',{method:'POST',body:JSON.stringify({user:USER,skill:sk,action,goal})}).catch(()=>{});
+  if(action!=='skip'){GOAL=goal;GOAL_SRC='prospective';}
+  const fn=GOAL_NEXT;GOAL_NEXT=null;if(fn)fn();
 }
 function narrow(){document.querySelector('.wrap').classList.remove('wide');}
 function langBar(){
@@ -438,19 +641,18 @@ function home(){
 }
 let queue=[],qi=0;
 const LV=n=>t.lv[n]||'';
-function startSkill(sk){
+function startSkill(sk){goalGate(sk,()=>teachPage(sk));}
+function teachPage(sk){
   narrow();
-  queue=ITEMS.filter(i=>i.skill===sk).sort((a,b)=>(a.level||2)-(b.level||2));qi=0;
+  // 同一级内：标准题在前，找错改错题在后
+  queue=ITEMS.filter(i=>i.skill===sk).sort((a,b)=>((a.level||2)-(b.level||2))||((a.type==='fix')-(b.type==='fix')));qi=0;
   const s=SKILL_INTRO[sk];
   const critList=(CRITERIA[sk]||s.criteria||[]);
-  const demoHtml=s.demos.map(d=>`
-    <div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px">
-      <div class="ctx" style="margin-bottom:8px">来访者：${d.c}</div>
-      <div style="font-size:14px"><span style="font-size:12px;padding:1px 8px;border-radius:99px;${d.tag==='good'?'background:var(--hitbg);color:var(--hit)':'background:var(--missbg);color:var(--miss)'}">${d.tag==='good'?(LANG==='en'?'A better reflection':'较好的反映'):d.badtype}</span></div>
-      <div style="font-size:15px;margin:6px 0">${d.r}</div>
-      <div class="sub" style="font-size:13px;margin-bottom:0">${d.note}</div>
-    </div>`).join('');
-  $('#app').innerHTML=`<div class="card"><span class="tag">${s.name} · ${t.demoTitle}</span>
+  CP={sk,i:0,pick:null,crit:null};
+  const demoHtml=`<div style="font-size:14px;margin-top:6px"><b>${t.pairsTitle}</b>
+      <span class="sub" style="font-size:12px">${t.pairIntro}</span></div>
+    <div id="pairbox"></div>`;
+  $('#app').innerHTML=`<div class="card">${stageBar(1)}${goalLine()}<span class="tag">${s.name} · ${t.demoTitle}</span>
     <p style="margin-bottom:8px"><b>${s.def}</b></p>
     <p class="sub" style="font-size:14px;margin-bottom:14px">${s.why}</p>
     <div style="font-size:14px"><b>${t.criteria}</b><span class="sub" style="font-size:12px">${t.criteriaNote}</span></div>
@@ -459,13 +661,45 @@ function startSkill(sk){
     <ul style="font-size:14px;margin:4px 0 12px 20px">${s.how.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
     <div style="font-size:14px"><b>${t.pitfalls}</b></div>
     <ul style="font-size:14px;margin:4px 0 14px 20px">${s.pitfalls.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
-    <div style="font-size:14px"><b>${t.demos}</b></div>
     ${demoHtml}
     <p class="sub" style="font-size:12px;margin-top:12px">${t.placeholderNote}</p>
     <button onclick="showItem()">${t.startPractice}（${queue.length}${t.items}）</button>
     <button class="ghost" onclick="convPicker('${sk}')">${t.jumpConv}</button>
     <button class="ghost" onclick="home()">${t.back}</button></div>`;
+  drawPair();
 }
+/* 对比例子：先选哪句更深 → 再选差在哪条标准 → 揭示解释。选择落日志，可看练习前的辨别力。 */
+function drawPair(){
+  const box=$('#pairbox');if(!box||!CP)return;
+  const ps=(PAIRS_ALL[LANG]||{})[CP.sk]||[];
+  if(CP.i>=ps.length){box.innerHTML=`<div class="sub" style="font-size:13px;margin-top:8px">${t.pairAllDone}</div>`;return;}
+  const p=ps[CP.i];
+  const crit=(CRITERIA[CP.sk]||SKILL_INTRO[CP.sk].criteria||[]);
+  const done=CP.crit!==null;
+  const cls=k=>!done?(CP.pick===k?'sel':''):(p.better===k?'good':'bad');
+  const tagOf=k=>done?`<span class="badge ${p.better===k?'hit':'miss'}" style="margin-left:6px">${p.better===k?t.pairBetter:t.pairWorse}</span>`:'';
+  box.innerHTML=`<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:8px">
+    <div class="sub" style="font-size:12px;margin-bottom:6px">${t.pairN(CP.i+1,ps.length)}</div>
+    <div class="ctx" style="margin-bottom:4px">${t.clientSaid}${esc2(p.c)}</div>
+    <div style="font-size:14px;margin-top:6px"><b>${t.pairAsk}</b></div>
+    ${['a','b'].map(k=>`<button class="pairopt ${cls(k)}" ${CP.pick?'disabled':''} onclick="pairPick('${k}')"><b>${k.toUpperCase()}</b>${esc2(p[k])}${tagOf(k)}</button>`).join('')}
+    ${CP.pick?`<div style="font-size:13px;margin-top:8px;color:${CP.pick===p.better?'var(--hit)':'var(--partial)'}">${CP.pick===p.better?t.pairRight:t.pairWrong}</div>
+      <div style="font-size:14px;margin-top:8px"><b>${t.pairWhy}</b></div>
+      <div class="pick">${crit.map((c,i)=>`<button class="${done&&i===p.crit?'sel':''}" ${done?'disabled':''} onclick="pairCrit(${i})" style="text-align:left">${i+1}. ${esc2(c)}</button>`).join('')}</div>`:''}
+    ${done?`<div style="font-size:13px;margin-top:8px;color:${CP.crit===p.crit?'var(--hit)':'var(--partial)'}">${CP.crit===p.crit?t.critRight:t.critWrong(p.crit+1)}</div>
+      <div class="sub" style="font-size:13px;margin:6px 0 0">${esc2(p.note)}</div>
+      <button class="ghost" style="font-size:13px;padding:6px 14px" onclick="pairNext()">${t.pairNext}</button>`:''}
+  </div>`;
+}
+function pairPick(k){if(CP.pick)return;CP.pick=k;drawPair();}
+function pairCrit(i){
+  if(CP.crit!==null)return;CP.crit=i;
+  const p=((PAIRS_ALL[LANG]||{})[CP.sk]||[])[CP.i];
+  api('/api/annotate',{method:'POST',body:JSON.stringify({key:'contrast:'+LANG+':'+CP.sk+':'+CP.i,agree:true,
+    note:'pick:'+CP.pick+'|better:'+p.better+'|crit:'+i+'|answer:'+p.crit,user:USER})}).catch(()=>{});
+  drawPair();
+}
+function pairNext(){CP.i++;CP.pick=null;CP.crit=null;drawPair();}
 function showItem(){
   if(qi>=queue.length){return finish();}
   cur=queue[qi];attempt=1;
@@ -474,10 +708,11 @@ function showItem(){
 function sideRef(){
   const s=SKILL_INTRO[cur.skill];
   const crit=(CRITERIA[cur.skill]||s.criteria||[]);
-  const demos=s.demos.map(d=>`<div class="sdemo">
-      <div class="who">${t.clientSaid}${esc2(d.c)}</div>
-      <div style="margin-top:4px"><span class="badge ${d.tag==='good'?'hit':'miss'}">${d.tag==='good'?t.refGood:t.refBad}</span> ${esc2(d.r)}</div>
-    </div>`).join('');
+  const demos=((PAIRS_ALL[LANG]||{})[cur.skill]||[]).map(p=>{const w=p.better==='a'?'b':'a';return `<div class="sdemo">
+      <div class="who">${t.clientSaid}${esc2(p.c)}</div>
+      <div style="margin-top:4px"><span class="badge hit">${t.refGood}</span> ${esc2(p[p.better])}</div>
+      <div style="margin-top:4px"><span class="badge miss">${t.refBad}</span> ${esc2(p[w])}</div>
+    </div>`;}).join('');
   return `<div class="card" style="border-color:var(--accent)">
     <button onclick="convPicker('${cur.skill}')" style="width:100%;margin-top:0;font-size:14px;padding:8px 12px">${t.jumpConv}</button>
     <div class="sub" style="font-size:12px;margin-top:6px;text-align:center">${t.jumpConvNote}</div>
@@ -494,6 +729,14 @@ function sideRef(){
     <details><summary>${t.refDemo}</summary>${demos}</details>
   </div>`;
 }
+function calCard(){
+  const c=CAL[cur.skill]||[];
+  if(!c.length)return '';
+  const ok=c.filter(Boolean).length;
+  return `<div class="card"><h4>${t.calTitle}</h4><div class="b"><b>${t.calTally(ok,c.length)}</b></div>
+    <div style="display:flex;gap:4px;margin-top:6px">${c.map(x=>`<span class="badge ${x?'hit':'partial'}">${x?'✓':'✗'}</span>`).join('')}</div>
+    <div class="sub" style="font-size:11px;margin:6px 0 0">${t.calTallyNote}</div></div>`;
+}
 function sideHist(){
   const h=HIST[cur.id]||[];
   if(!h.length)return `<div class="card"><h4>${t.histTitle}</h4>
@@ -506,48 +749,95 @@ function sideHist(){
       ${x.f.rewrite_hint?`<div style="font-size:12px;color:var(--accent);margin-top:3px">→ ${esc2(x.f.rewrite_hint)}</div>`:''}
     </div>`).join('')}</div>`;
 }
+function layerPick(){
+  return `<label>${t.layerAsk}</label>
+    <div class="pick" id="lpick">${['content','feeling','meaning','none'].map(k=>
+      `<button class="${SELF_LAYER===k?'sel':''}" onclick="SELF_LAYER='${k}';document.querySelectorAll('#lpick button').forEach(b=>b.classList.remove('sel'));this.classList.add('sel')">${t.layerNames[k]}</button>`).join('')}</div>`;
+}
+/* 找错改错题第一步：先找出原回应错在哪（答案在服务端核对），再进入改写 */
+function fixBlock(){
+  const fd=FIXDONE[cur.id];
+  const keys=Object.keys(t.errNames);
+  return `<div class="flawed"><span class="sub" style="font-size:12px">${t.fixFlawed}</span><br>${esc2(cur.flawed)}</div>
+    <label>${t.fixAsk}</label>
+    <div class="pick" id="fixpick">${keys.map(k=>`<button class="${fd&&(k===fd.answer)?'sel':''}" ${fd?'disabled':''}
+      style="${fd&&k===fd.choice&&!fd.correct?'border-color:var(--miss);color:var(--miss)':''}" onclick="fixCheck('${k}')">${t.errNames[k]}</button>`).join('')}</div>
+    <div id="fixres">${fd?`<div style="font-size:13px;margin-top:8px;color:${fd.correct?'var(--hit)':'var(--partial)'}">${fd.correct?t.fixRight:t.fixWrong(t.errNames[fd.answer]||fd.answer)}</div>
+      <div class="sub" style="font-size:13px;margin:4px 0 0">${esc2(fd.note||'')}</div>`:''}</div>`;
+}
+async function fixCheck(k){
+  if(FIXDONE[cur.id])return;
+  document.querySelectorAll('#fixpick button').forEach(b=>b.disabled=true);
+  try{
+    const r=await api('/api/fix_check',{method:'POST',body:JSON.stringify({item_id:cur.id,choice:k,user:USER,lang:LANG})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'check failed');
+    FIXDONE[cur.id]={choice:k,correct:d.correct,answer:d.answer,note:d.note};
+    render($('#resp')?$('#resp').value:'');
+  }catch(e){
+    $('#fixres').innerHTML=`<div class="err">${e.message}</div>`;
+    document.querySelectorAll('#fixpick button').forEach(b=>b.disabled=false);
+  }
+}
 function render(prevResp){
-  RATE_TOUCHED=false;
+  RATE_TOUCHED=false;SELF_LAYER=null;
   const s=SKILL_INTRO[cur.skill];
+  const isFix=cur.type==='fix', fixReady=!isFix||!!FIXDONE[cur.id];
   document.querySelector('.wrap').classList.add('wide');
   $('#app').innerHTML=`<div class="cols"><div>
   <div class="card">
-    ${goalLine()}
-    <span class="tag">${s.name} · ${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
+    ${stageBar(2)}${goalLine()}
+    <span class="tag">${s.name} · ${isFix?t.fixTag+' · ':''}${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
+    ${isFix?`<div class="sub" style="font-size:13px;margin:8px 0">${t.fixIntro}</div>`:''}
     <div class="bg">${cur.background}</div>
     <div class="ctx">${cur.context.replace(/\n/g,'<br>')}</div>
     <div class="utt">${cur.affect?`<span class="sub" style="font-size:12px">〔${t.affectPre}${cur.affect}〕</span><br>`:''}${cur.utterance}</div>
-    <label>${t.respLabel(s.name)}</label>
+    ${isFix?fixBlock():''}
+    <div id="answerzone" style="${fixReady?'':'display:none'}">
+    <label>${isFix?t.fixNow:t.respLabel(s.name)}</label>
     <textarea id="resp">${prevResp||''}</textarea>
+    ${layerPick()}
     <label>${t.selfRate}<span class="sub" style="font-size:12px"> ${t.selfRateNote}</span></label>
     <div class="rate"><span>0</span><input id="rate" type="range" min="0" max="10" value="5"
       oninput="RATE_TOUCHED=true;$('#rateV').textContent=this.value"><span>10</span><span id="rateV" style="color:var(--sub)">${t.unrated}</span></div>
     <button id="go" onclick="submit()">${t.submit}</button>
     <div class="spin" id="spin">${t.grading}</div>
+    </div>
     <div id="fb"></div>
     <div class="nav"><div class="dots">${queue.map((q,i)=>`<div class="dot ${i<qi?'done':i===qi?'cur':''}"></div>`).join('')}</div>
     <div></div></div>
   </div></div>
-  <div class="side" id="side">${sideRef()}${sideHist()}</div></div>`;
+  <div class="side" id="side">${sideRef()}${calCard()}${sideHist()}</div></div>`;
 }
 async function submit(){
   const resp=$('#resp').value.trim();
   if(!resp){$('#fb').innerHTML=`<div class="err">${t.needResp}</div>`;return;}
+  if(!SELF_LAYER){$('#fb').innerHTML=`<div class="err">${t.needLayer}</div>`;return;}
   $('#go').disabled=true;$('#spin').style.display='block';$('#fb').innerHTML='';
+  const myLayer=SELF_LAYER;
   try{
     const r=await api('/api/feedback',{method:'POST',
-      body:JSON.stringify({item_id:cur.id,response:resp,attempt,self_rating:RATE_TOUCHED?+$('#rate').value:null,user:USER,lang:LANG})});
+      body:JSON.stringify({item_id:cur.id,response:resp,attempt,self_rating:RATE_TOUCHED?+$('#rate').value:null,
+                           self_layer:myLayer,user:USER,lang:LANG})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'请求失败');
-    showFeedback(d.feedback,resp);
+    showFeedback(d.feedback,resp,myLayer,d.layer_canon);
   }catch(e){
     $('#fb').innerHTML=`<div class="err">${e.message}（可重试）</div>`;
   }finally{$('#go').disabled=false;$('#spin').style.display='none';}
 }
-function showFeedback(f,resp){
+function showFeedback(f,resp,myLayer,realLayer){
   const v=f.verdict;
   results[cur.id]=v;
   (HIST[cur.id]=HIST[cur.id]||[]).push({attempt,resp,f});
+  // 先判层对照：学员自判 vs 督导判定的落点
+  let calHtml='';
+  if(myLayer&&realLayer){
+    const ok=myLayer===realLayer;
+    (CAL[cur.skill]=CAL[cur.skill]||[]).push(ok);
+    calHtml=`<div class="calline">${t.calYou}<b>${t.layerNames[myLayer]}</b>　｜　${t.calReal}<b>${t.layerNames[realLayer]}</b>
+      <span class="${ok?'ok':'off'}">${ok?t.calOk:t.calOff}</span></div>`;
+  }
   const crit=(CRITERIA[cur.skill]||SKILL_INTRO[cur.skill].criteria||[]);
   const cs=(f.criteria||[]).map((c,i)=>{
     const mark=c.ok===true?'<span class="ck yes">✓</span>':c.ok===false?'<span class="ck no">✗</span>':'<span class="ck na">–</span>';
@@ -560,7 +850,7 @@ function showFeedback(f,resp){
   if(f.why_it_matters)rows.push([t.whyMatters,f.why_it_matters]);
   if(f.rewrite_hint)rows.push([v==='hit'?t.hintMore:t.hintFix,f.rewrite_hint]);
   const canRetry=attempt<3&&v!=='hit';
-  $('#fb').innerHTML=`<div class="fb ${v}"><div class="verdict">${vLabel(v)}</div>
+  $('#fb').innerHTML=`${calHtml}<div class="fb ${v}"><div class="verdict">${vLabel(v)}</div>
     <div class="meta">
       ${f.response_type?`<span>${t.respType}: ${esc2(f.response_type)}</span>`:''}
       ${f.layer?`<span>${t.landLayer}: ${esc2(f.layer)}</span>`:''}
@@ -573,14 +863,12 @@ function showFeedback(f,resp){
       :`<div class="sub" style="font-size:12px;margin-top:10px">${t.exNone}</div>`}</div>
     ${canRetry?`<button onclick="retry('${encodeURIComponent(resp)}')">${t.retry(attempt+1)}</button>`:''}
     <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button></div>`;
-  const sd=$('#side'); if(sd)sd.innerHTML=sideRef()+sideHist();
+  const sd=$('#side'); if(sd)sd.innerHTML=sideRef()+calCard()+sideHist();
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
-/* 示范式反馈：褪除规则与服务端 example_allowed 一致（内容/情感每题；意义仅未命中；对话练习不给） */
+/* 示范式反馈：褪除规则与服务端 example_allowed 一致（内容/情感每题；意义撤掉，由找错改错题代替；对话练习不给） */
 function EX_OK(skill,verdict){
-  if(skill==='content'||skill==='feeling')return true;
-  if(skill==='meaning')return verdict!=='hit';
-  return false;
+  return skill==='content'||skill==='feeling';
 }
 async function getExample(verdict){
   const btn=$('#exbtn'); if(btn){btn.disabled=true;btn.textContent=t.exWait;}
@@ -608,7 +896,7 @@ function next(){
 }
 function diffCheck(lv,nextLv){
   narrow();
-  $('#app').innerHTML=`<div class="card"><span class="tag">${t.diffTitle(LV(lv))}</span>
+  $('#app').innerHTML=`<div class="card">${stageBar(2)}<span class="tag">${t.diffTitle(LV(lv))}</span>
     <p style="margin:10px 0">${t.diffQ}</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button onclick="diffAns('${lv}','too_easy')">${t.tooEasy}</button>
@@ -631,7 +919,7 @@ function diffAns(lv,ans){
 function finish(){
   narrow();
   const sk=queue[0].skill;
-  $('#app').innerHTML=`<div class="card"><b>${t.finishTitle}</b>
+  $('#app').innerHTML=`<div class="card">${stageBar(2)}<b>${t.finishTitle}</b>
     <p class="sub" style="margin-top:8px">${t.finishSub}</p>
     <button onclick="convPicker('${sk}')">${t.startConv}</button>
     <button class="ghost" onclick="home()">${t.backFirst}</button></div>`;
@@ -651,13 +939,14 @@ async function loadCases(){
 }
 
 /* 选择来访者：占位项不可提交，选中后显示简介并解锁按钮 */
-async function convPicker(sk){
+function convPicker(sk){goalGate(sk,()=>convPickerInner(sk));}
+async function convPickerInner(sk){
   narrow();
   const s=SKILL_INTRO[sk];
   let list=[],failed=false;
   try{ list=await loadCases(); }catch(e){ failed=true; }
   const opts=list.map(c=>`<option value="${esc2(c.key)}">${esc2(c.category)}</option>`).join('');
-  $('#app').innerHTML=`<div class="card">
+  $('#app').innerHTML=`<div class="card">${stageBar(2)}
     ${goalLine()}
     <h2 style="margin:0 0 6px;font-size:19px">${t.pickTitle}</h2>
     <div class="sub" style="margin-bottom:18px">${t.pickSub(s.name)}</div>
@@ -708,7 +997,7 @@ async function startConv(sk, caseKey){
 function drawConv(busy){
   narrow();
   const s=SKILL_INTRO[CONV.skill];
-  $('#app').innerHTML=`<div class="card">
+  $('#app').innerHTML=`<div class="card">${stageBar(2)}
     ${goalLine()}
     <span class="tag">${t.convTag(s.name,CONV.turn,CONV.max)}</span>
     <div class="bg">${CONV.bg}</div>
@@ -797,6 +1086,61 @@ function sparkline(vals){
   const dots=vals.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3" fill="${v>=7?'var(--hit)':v<=3?'var(--miss)':'var(--accent)'}"><title>${v}</title></circle>`).join('');
   return `<svg width="${w}" height="${hh}" style="vertical-align:middle"><polyline points="${pts}" fill="none" stroke="var(--line)" stroke-width="2"/>${dots}</svg>`;
 }
+/* ③ 回看：练习笔记卡 —— 理解度曲线（悬停看台词）、三层落点、自判对照 */
+function bigCurve(vals,lines){
+  if(!vals||vals.length<2)return '';
+  const W=560,H=160,pl=28,pr=12,pt=12,pb=26;
+  const x=i=>pl+i*(W-pl-pr)/(vals.length-1), y=v=>pt+(10-(v==null?5:v))*(H-pt-pb)/10;
+  let g='';
+  [0,5,10].forEach(v=>{g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    <text x="${pl-8}" y="${y(v)+4}" font-size="11" text-anchor="end" fill="var(--sub)">${v}</text>`;});
+  for(let i=1;i<vals.length;i++){
+    const dv=(vals[i]??5)-(vals[i-1]??5);
+    const col=dv>0?'var(--hit)':dv<0?'var(--miss)':'var(--sub)';
+    g+=`<line x1="${x(i-1)}" y1="${y(vals[i-1])}" x2="${x(i)}" y2="${y(vals[i])}" stroke="${col}" stroke-width="2.5"/>`;
+  }
+  vals.forEach((v,i)=>{
+    const tip=i===0?`${t.noteOpen}: ${v}`:`${i}. ${(lines[i-1]||'').replace(/"/g,'”')} → ${v}`;
+    g+=`<circle cx="${x(i)}" cy="${y(v)}" r="5" fill="#fff" stroke="var(--accent)" stroke-width="2"><title>${esc2(tip)}</title></circle>
+      <text x="${x(i)}" y="${H-8}" font-size="11" text-anchor="middle" fill="var(--sub)">${i===0?t.noteOpen:i}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:auto;display:block">${g}</svg>`;
+}
+let DEBRIEF_JUDGE={};
+function judgeHtml(){
+  const ks=Object.keys(DEBRIEF_JUDGE);
+  if(!ks.length)return `<div class="sub" style="font-size:13px;margin:0">${t.noteJudgeEmpty}</div>`;
+  let agree=0;
+  const rows=ks.sort((a,b)=>a-b).map(i=>{
+    const {guess,v}=DEBRIEF_JUDGE[i];
+    const ok=(v==='hit'&&guess==='hit')||(v==='miss'&&guess==='miss');
+    if(ok)agree++;
+    const mark=v==='partial'?'<span style="color:var(--partial)">◐</span>':ok?'<span style="color:var(--hit)">✓</span>':'<span style="color:var(--miss)">✗</span>';
+    return `<div class="jrow">${t.noteJudgeRow(+i+1,guess==='hit'?t.gotIt:t.missedIt,vLabel(v),mark)}</div>`;
+  }).join('');
+  return `<div style="font-size:13px;font-weight:700">${t.noteAgree(agree,ks.length)}</div>${rows}`;
+}
+function noteCard(d){
+  const L=d.layers||[];
+  const cnt={content:0,feeling:0,meaning:0,none:0};
+  L.forEach(k=>{if(cnt[k]!==undefined)cnt[k]++;});
+  const tot=L.length||1;
+  const target=CONV&&CONV.skill;
+  const bars=['content','feeling','meaning','none'].map(k=>`<div class="lbar ${k===target?'target':''}">
+      <span>${t.layerNames[k]}</span>
+      <div class="track"><div class="fill" style="width:${Math.round(cnt[k]/tot*100)}%"></div></div>
+      <span>${cnt[k]}</span></div>`).join('')+
+    (target?`<div class="sub" style="font-size:11px;margin:4px 0 0 72px">${t.layerNames[target]} ${t.noteTarget}</div>`:'');
+  const lines=(d.transcript||[]).map(x=>x.response);
+  return `<div class="notecard">
+    <h4>${t.noteTitle}</h4>
+    <div class="sub" style="margin-bottom:6px">${t.cHit} ${(d.verdicts||[]).filter(v=>v==='hit').length} · ${t.cPartial} ${(d.verdicts||[]).filter(v=>v==='partial').length} · ${t.cMiss} ${(d.verdicts||[]).filter(v=>v==='miss').length}</div>
+    ${d.understood_curve&&d.understood_curve.length>1?`<h4>${t.noteCurve}</h4>${bigCurve(d.understood_curve,lines)}
+      <div class="sub" style="font-size:11px;margin:2px 0 0">${t.noteCurveTip}</div>`:''}
+    ${L.length?`<h4>${t.noteLayers}</h4>${bars}`:''}
+    <h4>${t.noteJudge}</h4><div id="judgebox">${judgeHtml()}</div>
+  </div>`;
+}
 function drawDebrief(d){
   narrow();
   DEBRIEF=d;
@@ -804,12 +1148,12 @@ function drawDebrief(d){
   const vc={hit:0,partial:0,miss:0};d.verdicts.forEach(v=>{if(vc[v]!==undefined)vc[v]++;});
   const sm=d.summary||{};
   const VB=v=>`<span style="font-size:12px;padding:1px 8px;border-radius:99px;${v==='hit'?'background:var(--hitbg);color:var(--hit)':v==='partial'?'background:var(--partialbg);color:var(--partial)':'background:var(--missbg);color:var(--miss)'}">${{hit:t.cHit,partial:t.cPartial,miss:t.cMiss}[v]||v}</span>`;
-  $('#app').innerHTML=`<div class="card">
+  DEBRIEF_JUDGE={};
+  $('#app').innerHTML=`<div class="card">${stageBar(3)}
     <span class="tag">${t.debriefTag(d.turns)}</span>
-    <div class="sub" style="margin-bottom:6px">${t.cHit} ${vc.hit} · ${t.cPartial} ${vc.partial} · ${t.cMiss} ${vc.miss}</div>
-    ${d.understood_curve&&d.understood_curve.length>1?`<div style="font-size:13px;color:var(--sub);margin:4px 0 10px">${t.curveLabel}${sparkline(d.understood_curve)}<span style="font-size:12px">${t.curveNote}</span></div>`:''}
+    ${noteCard(d)}
     ${d.prev_goal?`<div id="goalcheck" style="font-size:14px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:12px 14px;margin:8px 0">
-      <b>${t.goalLookBack}</b>${t.goalWas}<i>${esc2(d.prev_goal)}</i><br>${t.goalAsk}
+      <b>${t.goalLookBack}</b>${d.prev_goal_source==='prospective'?t.goalWasPros:t.goalWas}<i>${esc2(d.prev_goal)}</i><br>${t.goalAsk}
       <div style="display:flex;gap:8px;margin-top:8px">
         <button style="font-size:13px;padding:5px 14px;margin-top:0" onclick="goalProgress('${t.gYes}')">${t.gYes}</button>
         <button style="font-size:13px;padding:5px 14px;margin-top:0" onclick="goalProgress('${t.gNo}')">${t.gNo}</button>
@@ -859,6 +1203,8 @@ function revealMoment(i,guess){
   const label=guess==='hit'?t.gotIt:t.missedIt;
   api('/api/annotate',{method:'POST',
     body:JSON.stringify({key:'debrief:'+CONV.sid+':'+i,agree:true,note:'self-judge:'+guess+'|verdict:'+v,user:USER})}).catch(()=>{});
+  DEBRIEF_JUDGE[i]={guess,v};
+  const jb=document.getElementById('judgebox'); if(jb)jb.innerHTML=judgeHtml();
   document.getElementById('m'+i).classList.add('open');
   document.getElementById('sj'+i).innerHTML='<span class="sub" style="font-size:13px">'+t.yourCall+label+'</span>';
   const consistent=(v==='hit'&&guess==='hit')||(v==='miss'&&guess==='miss');

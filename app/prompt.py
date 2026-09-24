@@ -149,13 +149,11 @@ def example_user_prompt(item):
 
 
 def example_allowed(skill, verdict):
-    """褪除规则（《研究设计》表：W1–2 每题、W3 仅未命中、W4 不给）。
-    模块与周次对应：content=W1，feeling=W2，meaning=W3；对话练习=W4，不调用本函数。"""
-    if skill in ('content', 'feeling'):
-        return True
-    if skill == 'meaning':
-        return verdict != 'hit'
-    return False
+    """褪除规则（三阶段循环 v1）：W1–2 每题可看正例；W3 撤掉正例，改由「找错改错」反例承担支架；W4 不给。
+    模块与周次对应：content=W1，feeling=W2，meaning=W3；对话练习=W4，不调用本函数。
+    依据：工作示例渐进褪除（Renkl & Atkinson, 2003）与专长逆转（Kalyuga et al., 2003）。
+    旧规则（W3 仅未命中时给）与"成功后给反馈更有利"的证据方向相反，已弃用。"""
+    return skill in ('content', 'feeling')
 
 
 def postprocess(out):

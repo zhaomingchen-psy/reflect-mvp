@@ -151,13 +151,26 @@ def latest_goal(user):
                 pass
     return goal
 
-def save_goal(user, direction, session, skill):
+def save_goal(user, direction, session, skill, source='debrief', action=None):
+    """source='debrief'：复盘后自动存的改进方向（回顾式）；
+    source='prospective'：学员开练前自己定的目标（前瞻式，三阶段循环的「定锚」）。"""
     if not (user and direction):
         return
     rec = dict(ts=time.strftime('%Y-%m-%d %H:%M:%S'), user=user,
-               goal=direction, session=session, skill=skill)
+               goal=direction, session=session, skill=skill, source=source)
+    if action:
+        rec['action'] = action
     with open(GOALS_PATH, 'a', encoding='utf-8') as f:
         f.write(json.dumps(rec, ensure_ascii=False) + '\n')
+
+
+# 评价器的 layer 字段中英写法不同，统一成 content/feeling/meaning/none 再做对照
+_LAYER_CANON = {'内容': 'content', '情感': 'feeling', '意义': 'meaning', '无': 'none',
+                'content': 'content', 'feeling': 'feeling', 'meaning': 'meaning', 'none': 'none'}
+
+def canon_layer(s):
+    s = (s or '').strip()
+    return _LAYER_CANON.get(s) or _LAYER_CANON.get(s.lower())
 
 def review_data():
     """全部作答日志 + 已有标注（按 key = 日期文件名:行号 关联）。"""
@@ -317,6 +330,7 @@ def conv_end(sid):
                             surface=p['state']['surface'], emotions=p['state']['emotions'],
                             meaning=p['state']['meaning'], feedback=e['feedback']))
     verdicts = [e['verdict'] for e in evals]
+    layers = [canon_layer((e['feedback'] or {}).get('layer')) for e in evals]   # 练习笔记卡：每轮落点层次
     understood = [st.get('understood') for st in sess['states']]
     transcript = [dict(client=p['client'], response=p['response'],
                        verdict=evals[p['idx']]['verdict'], polish=p.get('polish'))
@@ -326,9 +340,10 @@ def conv_end(sid):
     prev = latest_goal(user)
     if sm and sm.get('direction'):
         save_goal(user, sm['direction'], sid, skill)
-    result = dict(turns=len(pairs), verdicts=verdicts, understood_curve=understood,
+    result = dict(turns=len(pairs), verdicts=verdicts, layers=layers, understood_curve=understood,
                   moments=moments, summary=sm or {}, transcript=transcript,
-                  prev_goal=(prev['goal'] if prev else None))
+                  prev_goal=(prev['goal'] if prev else None),
+                  prev_goal_source=((prev.get('source') or 'debrief') if prev else None))
     conv_log(dict(type='session', ts=sess['ts'], user=sess.get('user'), lang=lang, session=sid, skill=skill, case=case['id'],
                   case_key=sess.get('case_key'), category=sess.get('category'),
                   history=hist, states=sess['states'], evals=evals,
@@ -423,7 +438,9 @@ class H(BaseHTTPRequestHandler):
             q = parse_qs(urlparse(self.path).query)
             r = L(norm_lang((q.get('lang') or ['zh'])[0]))
             # 学员可见字段——绝不下发标注
-            vis = [{k: it.get(k) for k in ('id', 'skill', 'background', 'context', 'utterance', 'level', 'affect')}
+            # 找错改错题额外下发 type 与 flawed（有问题的回应）；error_type 答案留在服务端
+            vis = [{k: it.get(k) for k in ('id', 'skill', 'background', 'context', 'utterance', 'level', 'affect',
+                                           'type', 'flawed')}
                    for it in r['items'].values()]
             self._send(200, {'items': vis, 'skills': {k: v[0] for k, v in r['defs'].items()},
                              'criteria': r['crit']})
@@ -447,7 +464,8 @@ class H(BaseHTTPRequestHandler):
             g = latest_goal(user)
             self._send(200, {'goal': (g['goal'] if g else None),
                              'ts': (g['ts'] if g else None),
-                             'skill': (g['skill'] if g else None)})
+                             'skill': (g['skill'] if g else None),
+                             'source': ((g.get('source') or 'debrief') if g else None)})
         else:
             self._send(404, {'error': 'not found'})
 
@@ -578,6 +596,42 @@ class H(BaseHTTPRequestHandler):
                 return self._send(200, {'ok': True})
             except Exception as e:
                 return self._send(500, {'error': str(e)[:200]})
+        if self.path == '/api/goal':
+            # 三阶段循环 ① 定锚：开练前学员自己定目标（沿用上次方向 / 换一个 / 跳过）
+            try:
+                n = int(self.headers.get('Content-Length', 0))
+                body = json.loads(self.rfile.read(n).decode())
+                user = (body.get('user') or '').strip()
+                action = body.get('action')            # keep / new / skip
+                goal = (body.get('goal') or '').strip()
+                skill = body.get('skill')
+                if action == 'skip' or not goal:
+                    log_line(dict(ts=time.strftime('%Y-%m-%d %H:%M:%S'), type='goal_skip',
+                                  user=user or None, skill=skill))
+                    return self._send(200, {'ok': True, 'saved': False})
+                save_goal(user, goal, None, skill, source='prospective', action=action)
+                return self._send(200, {'ok': True, 'saved': True})
+            except Exception as e:
+                return self._send(500, {'error': str(e)[:200]})
+        if self.path == '/api/fix_check':
+            # 找错改错题第一步：判断原回应错在哪。答案只在服务端，不随题目下发。
+            try:
+                n = int(self.headers.get('Content-Length', 0))
+                body = json.loads(self.rfile.read(n).decode())
+                lang = norm_lang(body.get('lang'))
+                item = L(lang)['items'][body['item_id']]
+                if item.get('type') != 'fix':
+                    return self._send(400, {'error': 'not a fix item'})
+                choice = body.get('choice')
+                correct = choice == item.get('error_type')
+                log_line(dict(ts=time.strftime('%Y-%m-%d %H:%M:%S'), type='fix_check',
+                              user=(body.get('user') or '').strip() or None, lang=lang,
+                              item=item['id'], skill=item['skill'],
+                              choice=choice, answer=item.get('error_type'), correct=correct))
+                return self._send(200, {'correct': correct, 'answer': item.get('error_type'),
+                                        'note': item.get('error_note', '')})
+            except Exception as e:
+                return self._send(500, {'error': str(e)[:200]})
         if self.path != '/api/feedback':
             return self._send(404, {'error': 'not found'})
         try:
@@ -593,14 +647,19 @@ class H(BaseHTTPRequestHandler):
             out, err = call_llm(r['sys'](item['skill']), r['usr'](item, resp))
             out = postprocess(out)
             secs = round(time.time() - t0, 1)
+            # 先判层：学员提交前自判落在哪一层，与评价器的 layer 对照（校准，服务 H4）
+            self_layer = canon_layer(body.get('self_layer'))
+            layer = canon_layer((out or {}).get('layer'))
             rec = dict(ts=time.strftime('%Y-%m-%d %H:%M:%S'), user=(body.get('user') or '').strip() or None,
-                       lang=lang, item=item['id'], skill=item['skill'],
+                       lang=lang, item=item['id'], skill=item['skill'], item_type=item.get('type', 'standard'),
                        attempt=body.get('attempt', 1), self_rating=body.get('self_rating'),
+                       self_layer=self_layer, layer=layer,
+                       layer_match=(self_layer == layer) if (self_layer and layer) else None,
                        response=resp, secs=secs, feedback=out, error=err)
             log_line(rec)
             if out is None:
                 return self._send(502, {'error': '反馈生成失败，请重试 / feedback failed, please retry', 'detail': err})
-            self._send(200, {'feedback': out, 'secs': secs})
+            self._send(200, {'feedback': out, 'secs': secs, 'layer_canon': layer})
         except Exception as e:
             self._send(500, {'error': str(e)[:200]})
 
