@@ -118,6 +118,7 @@
   .pairopt{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);
            padding:10px 14px;margin-top:8px;font-size:15px;line-height:1.6}
   .pairopt:hover{border-color:var(--accent)}
+  .pairopt:disabled{opacity:1;cursor:default}
   .pairopt.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
   .pairopt.good{border-color:var(--hit);background:var(--hitbg)} .pairopt.bad{border-color:var(--miss);background:var(--missbg)}
   .pairopt b{color:var(--accent);margin-right:6px}
@@ -1116,7 +1117,8 @@ function judgeHtml(){
     const ok=(v==='hit'&&guess==='hit')||(v==='miss'&&guess==='miss');
     if(ok)agree++;
     const mark=v==='partial'?'<span style="color:var(--partial)">◐</span>':ok?'<span style="color:var(--hit)">✓</span>':'<span style="color:var(--miss)">✗</span>';
-    return `<div class="jrow">${t.noteJudgeRow(+i+1,guess==='hit'?t.gotIt:t.missedIt,vLabel(v),mark)}</div>`;
+    const vPlain={hit:t.cHit,partial:t.cPartial,miss:t.cMiss}[v]||v;
+    return `<div class="jrow">${t.noteJudgeRow(+i+1,guess==='hit'?t.gotIt:t.missedIt,vPlain,mark)}</div>`;
   }).join('');
   return `<div style="font-size:13px;font-weight:700">${t.noteAgree(agree,ks.length)}</div>${rows}`;
 }
