@@ -132,12 +132,36 @@
   .lbar.target span:first-child{color:var(--accent);font-weight:700}
   .jrow{font-size:13px;margin-top:4px}
   @media (max-width:900px){.cols{grid-template-columns:1fr}.side{position:static;max-height:none}}
+  /* ---- 界面说明：功能标签、ⓘ 小提示、每周路线、模块卡片 ---- */
+  .ftag{display:inline-block;font-size:12px;padding:1px 9px;border-radius:99px;margin:0 6px 4px 0;line-height:1.7;vertical-align:middle}
+  .ftag.xue{background:#EEEDFE;color:#3C3489}.ftag.lian{background:#E1F5EE;color:#085041}
+  .ftag.yong{background:#FAECE7;color:#712B13}.ftag.kan{background:#F1EFE8;color:#444441}
+  .tipi{display:inline-block;width:17px;height:17px;line-height:15px;text-align:center;border-radius:50%;border:1px solid var(--sub);
+        color:var(--sub);font:italic 700 11px Georgia,serif;cursor:pointer;margin-left:6px;vertical-align:2px;user-select:none;background:#fff}
+  .tipi:hover,.tipi:focus{border-color:var(--accent);color:var(--accent);outline:none}
+  .tipbox{display:none;font-size:13px;font-weight:400;line-height:1.65;color:var(--ink);background:#f6f8fb;border:1px solid #d6dfeb;
+          border-radius:8px;padding:8px 12px;margin:6px 0;text-align:left}
+  .tipbox.on{display:block}
+  .route{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 4px}
+  .route .st{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--sub);line-height:1.55}
+  .mcard{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:10px;background:#fff}
+  .mcard.now{border:2px solid var(--accent)}
+  .wk{font-size:12px;padding:1px 9px;border-radius:99px;background:var(--bg);color:var(--sub);border:1px solid var(--line)}
+  .mcard.now .wk{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .mbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+  .mbtns button{width:100%;margin-top:0;font-size:13px;padding:7px 10px}
+  .bcap{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.45;text-align:center}
+  .hh{font-size:14px;color:var(--accent);margin:18px 0 6px}
+  .helpdl dt{font-size:14px;font-weight:700;margin-top:8px}
+  .helpdl dd{font-size:13px;color:var(--sub);margin:2px 0 0}
+  .stages .tipi{align-self:center;flex:none}
+  @media (max-width:640px){.route{grid-template-columns:repeat(2,minmax(0,1fr))}.mbtns{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1 id="appTitle">REFLECT 反映式倾听练习</h1>
-  <div class="sub" id="appSub">MVP · 先自答，再看反馈，然后修改重写（每题最多 3 次）</div>
+  <div class="sub" id="appSub">每周练一个技能：先学，再练，再用到对话里</div>
   <div id="app"></div>
 </div>
 <script>
@@ -405,7 +429,179 @@ Object.assign(T.en,{
     'interpretation':'When you want to explain someone else, bring the focus back to the client\'s own feeling.','evaluation':'When you want to judge, try a tentative "it sounds like" instead.','self-disclosure':'Before telling your own story, keep the focus on theirs.'},
   finishOpt:'That set of optional items is done.'
 });
+/* ---- 界面说明：标签、小提示、新手引导、使用说明（2026-09） ---- */
+Object.assign(T.zh,{
+  sub:'每周练一个技能：先学，再练，再用到对话里',
+  help:'使用说明',tipAria:'这是什么',sumShort:'模块小结',
+  ftag:{xue:'学',lian:'练',yong:'用',kan:'看'},
+  ftagFull:{xue:'学 · 教学与比一比',lian:'练 · 单句练习题',yong:'用 · 对话练习',kan:'看 · 反馈与复盘'},
+  routeTitle:'每周怎么练',
+  route:[['xue','看定义，做 3 组比一比','约 10 分钟'],['lian','必做 7 题，每题可改 3 次','约 30 分钟'],
+         ['yong','和模拟来访者对话','1–2 次，每次约 15 分钟'],['kan','看复盘和模块小结','带走一个改进方向']],
+  wk:n=>`建议第 ${n} 周`,
+  wk4:'建议第 4 周：用对话练习把三种反映串起来——任选一个模块进入对话练习，多换几位来访者。',
+  allOpen:'三个模块都已开放，可以按自己的节奏练，标签上是建议的周次。',
+  stTodo:'未开始',stDoing:'进行中',stDone:'必做已完成',stStart:'从这里开始',
+  convN:n=>`对话 ${n} 次`,enterMod:'回到这个模块',
+  capPractice:'先看定义和比一比，再做题',capContinue:'从上次停下的地方接着做',capDoneMod:'可以做选做题，或复习定义',
+  capConv:'完整会谈，结束后复盘',capSum:'随时看命中情况和建议',
+  polishWhat:'「帮我改得更共情」是什么？',
+  tips:{
+    goal:'上次复盘时督导给你的改进方向，也可能是你开练前自己定的目标。这周练习时带着它，下次复盘会问你有没有进展。',
+    anchor:'开练前用一句话写下这次想练什么，比如「把情绪词说得具体一点」。带着目标练，比漫无目的地做题进步快。可以跳过。',
+    pairs:'同一句来访者的话配两句回应。先自己判断哪句接得更深、差的那句错在哪，再看解释。用来练你分辨好回应的眼光。',
+    stages:'每次练习分三步：① 定锚，先定一个小目标；② 试答，做题或对话；③ 回看，看反馈和复盘，带走一个改进方向。',
+    coreopt:'每个模块有 7 道必做题，是每周的基本量，由易到难排列；另有 14 道选做题，给想多练的人，不做也不影响。',
+    layer:'提交前先判断你这句接住了哪一层：内容（事实）、情感（感受）还是意义（对他重要的东西）。提交后会和督导的判定对照，练的是对自己回应的觉察。',
+    rate:'选填。你对这句有几分把握（0–10）。事后可以对照实际结果，看看自己的感觉准不准。',
+    retry:'看完反馈后可以改写同一题再提交，每题最多 3 次。改写是进步最快的环节。',
+    example:'想看一句参考写法时再点。示范只供对照，不必照抄。第 3 周（意义反映）不提供示范，由找错改错题代替。',
+    fix:'给你一句有问题的咨询师回应。先找出它错在哪（比如急着给建议），再把它改写成一句反映。',
+    diff:'做完一个难度等级后，说说这组题对你是太容易、正好还是太难。正好有挑战的难度最值得再练一组。',
+    conv:'和模拟来访者做一段 10 轮左右的完整会谈。过程中没有提示和反馈，像真实会谈一样，结束后一起复盘。可以选本周题目里的那位来访者，也可以按议题换一位。',
+    polish:'对话中写好一句还没发出去时，可以请督导帮你润色。它会先说这句好在哪、差在哪，再给一个改法；用不用由你决定。',
+    curve:'来访者每说完一轮话时感到被理解的程度（0–10）。绿色线段表示上升，红色表示下降；把鼠标停在点上，能看到是你哪一句带来的变化。',
+    replay:'挑出会谈里的几个关键时刻。先判断你当时那句接住了没有，再看来访者当时的内在状态：表面说了什么、有什么情绪、没说出口的是什么。',
+    summary:'随时可看。汇总你在这个模块的命中情况、三条技术标准的完成情况，并指出下一步最值得盯住的地方。',
+    history:'你做过的所有题和对话都在这里，可以展开看每次的作答和反馈。在同一台电脑的浏览器上，下次打开会接着上次的进度。'},
+  tipNames:{goal:'本周练习方向',anchor:'开练前定目标',pairs:'比一比',stages:'三步进度条（定锚／试答／回看）',
+    coreopt:'必做题和选做题',layer:'先判层',rate:'有多大把握',retry:'修改重写',example:'看一个示范句',fix:'找错改错',
+    diff:'难度自评',conv:'对话练习',polish:'帮我改得更共情',curve:'来访者的被理解感曲线',replay:'关键时刻回放',
+    summary:'模块小结',history:'我的练习记录'},
+  helpTitle:'使用说明',helpWhat:'这是什么',
+  helpWhatTxt:'REFLECT 用来练习反映式倾听：把来访者说的内容、感受和没说出口的意义，准确地说回给他。你会和模拟来访者练习；每次作答后，督导会告诉你接住了什么、还差在哪。督导的反馈由 AI 按统一的技术标准生成。',
+  helpWeek:'每周怎么练',helpFeat:'每个功能是做什么的',helpWhy:'为什么这样练',
+  helpWhyIntro:'这套练法来自「刻意练习」的思路：技能靠有针对性的练习进步，而不是靠做得多。平台的每个环节都对应其中一条：',
+  helpWhyList:['一次只练一个具体技能：三个模块分别对应内容、情感、意义三层反映。',
+    '先有目标再练：开练前定一个小目标，复盘后带走一个改进方向。',
+    '每次作答马上得到具体反馈：不只告诉你对不对，还告诉你接住了什么、差在哪一层。',
+    '根据反馈改写再试：同一题最多改 3 次，改写比做新题更能进步。',
+    '难度逐步提高：题目由初级到高级排列，太难可以退回来再练一组。',
+    '练过的要用出来：对话练习里没有提示，检验你能不能在真实的节奏里接住来访者。'],
+  helpData:'你的练习记录',
+  helpDataTxt:'你的作答、对话和复盘会被记录下来，用于研究分析和改进平台。在同一台电脑的浏览器上，下次打开会接着上次的进度；「我的练习记录」里能看到全部历史。',
+  helpReplay:'重看新手引导',
+  onb:[{h:'欢迎来到 REFLECT',p:'这里用来练习反映式倾听：把来访者说的内容、感受和没说出口的意义，准确地说回给他。你会和模拟来访者练习，每次作答后都有督导反馈。督导的反馈由 AI 按统一的技术标准生成。'},
+       {h:'每周怎么练',p:'每周练一个技能，按「学 → 练 → 用 → 看」四步走：先看定义和比一比，再做必做题，然后和模拟来访者对话，最后看复盘和小结。三个模块都已开放，标签上是建议的周次。',route:true},
+       {h:'几个小约定',list:['每道题最多改写 3 次。','做到一半可以离开，在同一台电脑上下次打开会接着做。','看到 ⓘ 就点开，能看到这个东西是什么、有什么用。','右上角「使用说明」随时可以回来看。']}],
+  onbNext:'下一步',onbPrev:'上一步',onbGo:'开始练习',onbSkip:'跳过'
+});
+Object.assign(T.en,{
+  sub:'One skill a week: learn it, practise it, then use it in conversation',
+  help:'How it works',tipAria:'What is this?',sumShort:'Module summary',
+  ftag:{xue:'Learn',lian:'Practise',yong:'Apply',kan:'Review'},
+  ftagFull:{xue:'Learn · teaching and comparisons',lian:'Practise · single-response items',yong:'Apply · conversation practice',kan:'Review · feedback and debriefs'},
+  routeTitle:'How each week works',
+  route:[['xue','Read the definition, do 3 comparisons','about 10 minutes'],['lian','7 core items, up to 3 tries each','about 30 minutes'],
+         ['yong','Talk with a simulated client','1–2 sessions, about 15 minutes each'],['kan','Read the debrief and module summary','take away one thing to improve']],
+  wk:n=>`Suggested for week ${n}`,
+  wk4:'Suggested for week 4: tie the three reflections together in conversation practice. Enter from any module and try several different clients.',
+  allOpen:'All three modules are open, so you can work at your own pace. The labels show the suggested week.',
+  stTodo:'Not started',stDoing:'In progress',stDone:'Core items done',stStart:'Start here',
+  convN:n=>`${n} conversation${n===1?'':'s'}`,enterMod:'Back to this module',
+  capPractice:'Read the definition and comparisons, then answer items',capContinue:'Pick up where you left off',capDoneMod:'Try the optional items or review the definition',
+  capConv:'A full session, with a debrief afterwards',capSum:'Your hits and suggestions, any time',
+  polishWhat:'What does "help me make this more empathic" do?',
+  tips:{
+    goal:"The direction your supervisor gave you in your last debrief, or the goal you set yourself before practising. Keep it in mind this week; the next debrief will ask how it went.",
+    anchor:"Before you start, write one line about what you want to work on, such as “name the feeling more precisely”. Practice with a target moves faster than practice without one. You can skip this.",
+    pairs:"One client statement, two responses. Decide which one goes deeper and what the weaker one misses, then read the explanation. This trains your eye for a good response.",
+    stages:"Every session has three steps: 1 Anchor, set a small goal; 2 Attempt, answer items or talk with a client; 3 Reflect, read the feedback or debrief and take away one thing to improve.",
+    coreopt:"Each module has 7 core items, the weekly baseline, ordered from easy to hard. The 14 optional items are for extra practice and are not required.",
+    layer:"Before you submit, decide which layer your response reached: content (the facts), feeling, or meaning (what matters to the client). After you submit, your call is compared with the supervisor's verdict. This builds awareness of your own responses.",
+    rate:"Optional. How sure you are about this response, from 0 to 10. Later you can compare it with the actual result.",
+    retry:"After the feedback, rewrite the same item and submit again, up to 3 times per item. Rewriting is where most of the learning happens.",
+    example:"Open it only when you want to see one possible wording. It is there for comparison, not for copying. Week 3 (meaning reflection) has no examples; find-and-fix items take their place.",
+    fix:"You see a counsellor response with a problem. First name what is wrong with it (for example, jumping to advice), then rewrite it as a reflection.",
+    diff:"After each difficulty level, say whether that set was too easy, about right or too hard. The level that feels about right is the one worth repeating.",
+    conv:"A full session of about 10 turns with a simulated client. There are no hints or feedback during the session, just as in a real one; you debrief afterwards. Pick the client from this week's items, or choose another by topic.",
+    polish:"While a line is drafted but not yet sent, you can ask the supervisor to polish it. It says what works and what does not, then offers a revision; whether to use it is up to you.",
+    curve:"How understood the client felt after each of their turns, from 0 to 10. Green segments go up and red segments go down; hover over a point to see which of your lines caused the change.",
+    replay:"A few key moments from the session. First judge whether your line caught the client, then see their inner state: what they said, what they felt, and what they left unsaid.",
+    summary:"Available any time. Shows your hits in this module, how often you met each of the three criteria, and the one thing most worth watching next.",
+    history:"Every item and conversation you have done, with each attempt and its feedback. In the same browser, your progress continues where you left off."},
+  tipNames:{goal:'Your focus this week',anchor:'Set a goal before practising',pairs:'Compare',stages:'Three-step bar (anchor, attempt, reflect)',
+    coreopt:'Core and optional items',layer:'Call the layer first',rate:'How confident are you',retry:'Rewrite',example:'Show a worked example',fix:'Find and fix',
+    diff:'Difficulty check',conv:'Conversation practice',polish:'Help me make this more empathic',curve:'How understood the client felt',replay:'Key-moment replay',
+    summary:'Module summary',history:'My practice record'},
+  helpTitle:'How it works',helpWhat:'What this is',
+  helpWhatTxt:"REFLECT is for practising reflective listening: saying back, accurately, what a client has told you, what they feel, and what they have left unsaid. You practise with simulated clients; after each response, the supervisor tells you what you caught and what you missed. The supervisor's feedback is generated by AI against a fixed set of skill criteria.",
+  helpWeek:'How each week works',helpFeat:'What each feature does',helpWhy:'Why it works this way',
+  helpWhyIntro:'The design follows deliberate practice: skills grow through targeted practice, not sheer volume. Each part of the platform maps to one principle:',
+  helpWhyList:['One specific skill at a time: the three modules cover content, feeling and meaning reflection.',
+    'A goal before practice: set a small goal before you start, and take away one direction after each debrief.',
+    'Immediate, specific feedback: not just right or wrong, but what you caught and which layer you missed.',
+    'Rewrite and try again: up to 3 tries per item, because revising teaches more than new items do.',
+    'Gradually harder: items run from beginner to advanced, and you can repeat a level that felt too hard.',
+    'Use what you practised: conversation practice has no hints, so it tests whether you can catch the client in real time.'],
+  helpData:'Your practice record',
+  helpDataTxt:"Your responses, conversations and debriefs are recorded for research analysis and to improve the platform. In the same browser, your progress continues where you left off; My practice record shows your full history.",
+  helpReplay:'Replay the welcome guide',
+  onb:[{h:'Welcome to REFLECT',p:"This is where you practise reflective listening: saying back, accurately, what a client has told you, what they feel, and what they have left unsaid. You practise with simulated clients and get supervisor feedback after each response. The supervisor's feedback is generated by AI against a fixed set of skill criteria."},
+       {h:'How each week works',p:'Each week covers one skill in four steps, learn, practise, apply, review: read the definition and comparisons, answer the core items, talk with a simulated client, then read the debrief and summary. All three modules are open; the labels show the suggested week.',route:true},
+       {h:'A few things to know',list:['Each item allows up to 3 tries.','You can stop halfway; in the same browser, you will pick up where you left off.','Whenever you see ⓘ, open it to learn what that feature is and what it is for.','How it works, at the top right, is always there if you need it.']}],
+  onbNext:'Next',onbPrev:'Back',onbGo:'Start practising',onbSkip:'Skip'
+});
 let t=T[LANG];
+/* ---- 界面说明：ⓘ 小提示、功能标签、每周路线、使用说明、新手引导 ---- */
+let TIPN=0;
+function tipI(key,id){return `<i class="tipi" role="button" tabindex="0" title="${t.tipAria}" aria-label="${t.tipAria}" onclick="event.stopPropagation();event.preventDefault();toggleTip('${id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTip('${id}')}">i</i>`;}
+function tipB(key,id){return `<span class="tipbox" id="${id}">${(t.tips||{})[key]||''}</span>`;}
+function tip(key){const id='tp'+(++TIPN);return tipI(key,id)+tipB(key,id);}
+function tipPair(key){const id='tp'+(++TIPN);return [tipI(key,id),tipB(key,id)];}
+function toggleTip(id){const e=document.getElementById(id);if(e)e.classList.toggle('on');}
+function ftag(k){return `<span class="ftag ${k}">${t.ftag[k]}</span>`;}
+function routeHtml(){
+  return `<div class="route">${t.route.map(([k,a,b],i)=>`<div class="st"><span class="ftag ${k}">${i+1} ${t.ftag[k]}</span>
+    <div style="margin-top:5px;color:var(--ink)">${a}</div><div>${b}</div></div>`).join('')}</div>`;
+}
+const WEEK={content:1,feeling:2,meaning:3};
+function onbKey(){return 'reflect_onb::'+USER;}
+function afterLogin(){
+  let seen=null;try{seen=localStorage.getItem(onbKey());}catch(e){}
+  if(!seen)return onboard(0);
+  home();
+}
+function onboard(i,fromHelp){
+  narrow();
+  const n=t.onb.length;i=Math.max(0,Math.min(i,n-1));
+  const s=t.onb[i];
+  const fh=fromHelp?'true':'false';
+  $('#app').innerHTML=`${langBar()}<div class="card">
+    <div class="sub" style="font-size:12px;margin-bottom:6px">${i+1} / ${n}</div>
+    <h2 style="font-size:20px;margin-bottom:6px">${s.h}</h2>
+    ${s.p?`<p style="font-size:15px">${s.p}</p>`:''}
+    ${s.route?routeHtml():''}
+    ${s.list?`<ul style="font-size:15px;margin:6px 0 0 20px">${s.list.map(x=>`<li style="margin-top:6px">${x}</li>`).join('')}</ul>`:''}
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      ${i>0?`<button class="ghost" onclick="onboard(${i-1},${fh})">${t.onbPrev}</button>`:''}
+      ${i<n-1?`<button onclick="onboard(${i+1},${fh})">${t.onbNext}</button>`:`<button onclick="onbDone()">${t.onbGo}</button>`}
+      ${i<n-1?`<a href="#" style="font-size:13px;color:var(--sub);margin-top:14px" onclick="onbDone();return false">${t.onbSkip}</a>`:''}
+    </div></div>`;
+}
+function onbDone(){try{localStorage.setItem(onbKey(),'1');}catch(e){}home();}
+function helpPage(){
+  narrow();
+  const groups=[['xue',['anchor','pairs','stages']],['lian',['coreopt','layer','rate','retry','example','fix','diff']],
+                ['yong',['conv','polish']],['kan',['curve','replay','goal','summary','history']]];
+  $('#app').innerHTML=`${langBar(true)}<div class="card">
+    <h2 style="font-size:20px;margin-bottom:4px">${t.helpTitle}</h2>
+    <h4 class="hh">${t.helpWhat}</h4><p style="font-size:14px">${t.helpWhatTxt}</p>
+    <h4 class="hh">${t.helpWeek}</h4>${routeHtml()}
+    <p class="sub" style="font-size:13px;margin:6px 0 0">${t.allOpen}</p>
+    <p class="sub" style="font-size:13px;margin:2px 0 0">${t.wk4}</p>
+    <h4 class="hh">${t.helpFeat}</h4>
+    ${groups.map(([g,ks])=>`<div style="margin-top:12px"><span class="ftag ${g}">${t.ftagFull[g]}</span>
+      <dl class="helpdl">${ks.map(k=>`<dt>${t.tipNames[k]}</dt><dd>${t.tips[k]}</dd>`).join('')}</dl></div>`).join('')}
+    <h4 class="hh">${t.helpWhy}</h4><p style="font-size:14px">${t.helpWhyIntro}</p>
+    <ul style="font-size:14px;margin:4px 0 0 20px">${t.helpWhyList.map(x=>`<li style="margin-top:4px">${x}</li>`).join('')}</ul>
+    <h4 class="hh">${t.helpData}</h4><p style="font-size:14px">${t.helpDataTxt}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="${USER?'home()':'askUser()'}">${USER?t.home:t.back}</button>
+      ${USER?`<button class="ghost" onclick="onboard(0,true)">${t.helpReplay}</button>`:''}
+    </div></div>`;
+  window.scrollTo({top:0});
+}
 const VERDICT={hit:'✓ 命中',partial:'◐ 部分命中',miss:'✗ 脱靶'};
 const vLabel=v=>({hit:t.vHit,partial:t.vPartial,miss:t.vMiss}[v]||v);
 let ACCESS='';
@@ -634,11 +830,12 @@ async function loadGoal(){
   catch(e){GOAL=null;GOAL_SRC=null;}
 }
 function goalLine(){
-  return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${GOAL_SRC==='prospective'?t.goalFromPros:t.goalFrom}：${esc2(GOAL)}</div>`:'';
+  return GOAL?`<div style="font-size:13px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:12px"><b style="color:var(--accent)">${t.goalBanner}</b>${GOAL_SRC==='prospective'?t.goalFromPros:t.goalFrom}：${esc2(GOAL)}${tip('goal')}</div>`:'';
 }
 /* 三阶段进度条：1 定锚 / 2 试答 / 3 回看 */
 function stageBar(n){
-  return `<div class="stages">${t.stages.map((s,i)=>`<span class="${i+1===n?'on':i+1<n?'done':''}">${s}</span>`).join('')}</div>`;
+  const [ti,tb]=tipPair('stages');
+  return `<div class="stages">${t.stages.map((s,i)=>`<span class="${i+1===n?'on':i+1<n?'done':''}">${s}</span>`).join('')}${ti}</div>${tb}`;
 }
 /* ① 定锚：开练前定目标。每个模块在本次打开页面时只问一次。 */
 function goalGate(sk,then){
@@ -648,7 +845,7 @@ function goalGate(sk,then){
   const s=SKILL_INTRO[sk];
   $('#app').innerHTML=`<div class="card">${stageBar(1)}
     <span class="tag">${s.name}</span>
-    <h2 style="margin:6px 0 6px;font-size:19px">${t.goalTitle}</h2>
+    <h2 style="margin:6px 0 6px;font-size:19px">${t.goalTitle}${tip('anchor')}</h2>
     <div class="sub" style="margin-bottom:14px">${t.goalSub}</div>
     ${GOAL?`<div style="font-size:14px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:10px 14px">
         ${t.goalLast}<b>${esc2(GOAL)}</b></div>
@@ -675,8 +872,9 @@ async function goalSet(action){
   const fn=GOAL_NEXT;GOAL_NEXT=null;if(fn)fn();
 }
 function narrow(){document.querySelector('.wrap').classList.remove('wide');}
-function langBar(){
+function langBar(noHelp){
   return `<div style="text-align:right;font-size:12px;margin-bottom:8px">
+    ${noHelp?'':`<a href="#" style="color:var(--accent);margin-right:14px" onclick="helpPage();return false">ⓘ ${t.help}</a>`}
     <a href="#" style="color:${LANG==='zh'?'var(--accent)':'var(--sub)'};font-weight:${LANG==='zh'?'700':'400'}" onclick="switchLang('zh');return false">中文</a>
     <span style="color:var(--line)"> | </span>
     <a href="#" style="color:${LANG==='en'?'var(--accent)':'var(--sub)'};font-weight:${LANG==='en'?'700':'400'}" onclick="switchLang('en');return false">English</a></div>`;
@@ -689,10 +887,12 @@ async function boot(){
   const d=await r.json();
   ITEMS=d.items;SKILLS=d.skills;CRITERIA=d.criteria||{};
   ITEM_BY_ID={};ITEMS.forEach(i=>ITEM_BY_ID[i.id]=i);
-  if(!USER){askUser();}else{await loadGoal();await loadProg();home();}
+  document.getElementById('appTitle').textContent=t.title;
+  document.getElementById('appSub').textContent=t.sub;
+  if(!USER){askUser();}else{await loadGoal();await loadProg();afterLogin();}
 }
 function askCode(bad){
-  $('#app').innerHTML=`${langBar()}<div class="card"><b>${t.codeAsk}</b>
+  $('#app').innerHTML=`${langBar(true)}<div class="card"><b>${t.codeAsk}</b>
     <p class="sub" style="margin-top:6px">${t.codeHint}</p>
     <input id="ucode" type="password" style="width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--line);border-radius:8px" placeholder="${t.codeAsk}">
     ${bad?`<div class="err">${t.codeBad}</div>`:''}
@@ -720,33 +920,43 @@ function askUser(){
 async function setUser(){
   const v=$('#uname').value.trim();
   if(!v)return;
-  USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();await loadProg();home();
+  USER=v;localStorage.setItem('psyclient_user',v);await loadGoal();await loadProg();afterLogin();
 }
 function home(){
   narrow();
-  const bySkill={};ITEMS.forEach(it=>{(bySkill[it.skill]=bySkill[it.skill]||[]).push(it)});
-  let h=`${langBar()}<div class="home">${goalLine()}<div class="sub">${t.cur}<b>${USER}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a> · ${t.pick}
-    · <a href="#" style="color:var(--accent)" onclick="historyPage();return false">${t.histBtn}</a></div>`;
-  for(const [sk,items] of Object.entries(bySkill)){
-    const core=modItems(sk,'core'),opt=modItems(sk,'opt');
-    const cd=core.filter(isDone).length,od=opt.filter(isDone).length;
-    h+=`<div style="border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:10px;background:#fff">
-      <div style="cursor:pointer" onclick="startSkill('${sk}')">
-        <b style="color:var(--accent)">${SKILLS[sk]}</b>
-        <span class="sub" style="font-size:12px;margin-left:6px">${t.progCore(cd,core.length)}${opt.length?' · '+t.progOpt(od,opt.length):''}${t.plusConv}</span>
-        <div style="font-size:13px;color:var(--sub);margin-top:4px">${SKILL_INTRO[sk].def}</div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <button style="margin-top:0;font-size:13px;padding:6px 14px" onclick="startSkill('${sk}')">${cd&&cd<core.length?t.contCore(cd+1):t.startPractice}</button>
-        <button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="convPicker('${sk}')">${t.convNow}</button>
-        ${cd+od?`<button class="ghost" style="margin-top:0;font-size:13px;padding:6px 14px" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>`:''}
+  const sks=Object.keys(SKILLS).sort((a,b)=>(WEEK[a]||9)-(WEEK[b]||9));
+  const st={};
+  sks.forEach(sk=>{const core=modItems(sk,'core'),opt=modItems(sk,'opt');
+    st[sk]={core,opt,cd:core.filter(isDone).length,od:opt.filter(isDone).length,nc:PROG.convs.filter(c=>c.skill===sk).length};});
+  const now=sks.find(sk=>st[sk].cd<st[sk].core.length);
+  const anyStarted=sks.some(sk=>st[sk].cd||st[sk].od||st[sk].nc);
+  let h=`${langBar()}<div class="home">
+    <div class="sub" style="margin-bottom:12px">${t.cur}<b>${esc2(USER)}</b> <a href="#" style="color:var(--accent)" onclick="askUser();return false">${t.switch}</a>
+      · <a href="#" style="color:var(--accent)" onclick="historyPage();return false">${t.histBtn}</a></div>
+    ${goalLine()}
+    <div style="font-size:15px;font-weight:700;margin-top:4px">${t.routeTitle}</div>
+    ${routeHtml()}
+    <div class="sub" style="font-size:12px;margin:4px 0 2px">${t.allOpen}</div>`;
+  sks.forEach(sk=>{
+    const x=st[sk],done=x.core.length>0&&x.cd>=x.core.length,started=x.cd||x.od||x.nc;
+    const status=done?t.stDone:started?t.stDoing:(sk===now&&!anyStarted?t.stStart:t.stTodo);
+    const main=done?t.enterMod:x.cd?t.contCore(x.cd+1):t.startPractice;
+    const cap=done?t.capDoneMod:x.cd?t.capContinue:t.capPractice;
+    h+=`<div class="mcard ${sk===now?'now':''}">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="wk">${t.wk(WEEK[sk]||'')}</span>
+        <b style="color:var(--accent);font-size:16px">${SKILLS[sk]}</b>
+        <span class="sub" style="font-size:12px;margin:0 0 0 auto">${status}</span></div>
+      <div style="font-size:13px;color:var(--sub);margin-top:4px">${SKILL_INTRO[sk].def}</div>
+      <div style="margin-top:8px"><span class="ftag lian">${t.progCore(x.cd,x.core.length)}</span>${x.opt.length?`<span class="ftag lian">${t.progOpt(x.od,x.opt.length)}</span>`:''}<span class="ftag yong">${t.convN(x.nc)}</span></div>
+      <div class="mbtns">
+        <div><button onclick="startSkill('${sk}')">${main}</button><div class="bcap">${cap}</div></div>
+        <div><button class="ghost" onclick="convPicker('${sk}')">${t.convNow}</button><div class="bcap">${t.capConv}</div></div>
+        <div><button class="ghost" onclick="moduleSummary('${sk}')">${t.sumShort}</button><div class="bcap">${t.capSum}</div></div>
       </div></div>`;
-  }
-  h+=`<div style="margin-top:20px;border-top:1px dashed var(--line);padding-top:12px">
-    <span class="sub" style="font-size:12px">${t.scaLine}
-    <a href="#" style="color:var(--accent)" onclick="startSCA('A');return false">${t.formA}</a> ·
-    <a href="#" style="color:var(--accent)" onclick="startSCA('B');return false">${t.formB}</a></span></div>`;
-  h+='</div>';$('#app').innerHTML=h;
+  });
+  h+=`<div class="sub" style="font-size:13px;margin-top:14px">${t.wk4}</div></div>`;
+  $('#app').innerHTML=h;
 }
 let queue=[],qi=0;
 const LV=n=>t.lv[n]||'';
@@ -766,10 +976,10 @@ function teachPage(sk){
   const s=SKILL_INTRO[sk];
   const critList=(CRITERIA[sk]||s.criteria||[]);
   CP={sk,i:0,pick:null,crit:null};
-  const demoHtml=`<div style="font-size:14px;margin-top:6px"><b>${t.pairsTitle}</b>
+  const demoHtml=`<div style="font-size:14px;margin-top:6px"><b>${t.pairsTitle}</b>${tip('pairs')}
       <span class="sub" style="font-size:12px">${t.pairIntro}</span></div>
     <div id="pairbox"></div>`;
-  $('#app').innerHTML=`<div class="card">${stageBar(1)}${goalLine()}${progBox}<span class="tag">${s.name} · ${t.demoTitle}</span>
+  $('#app').innerHTML=`<div class="card">${stageBar(1)}${goalLine()}${progBox}${ftag('xue')}<span class="tag">${s.name} · ${t.demoTitle}</span>
     <p style="margin-bottom:8px"><b>${s.def}</b></p>
     <p class="sub" style="font-size:14px;margin-bottom:14px">${s.why}</p>
     <div style="font-size:14px"><b>${t.criteria}</b><span class="sub" style="font-size:12px">${t.criteriaNote}</span></div>
@@ -786,7 +996,7 @@ function teachPage(sk){
     ${cd+od?`<button class="ghost" onclick="moduleSummary('${sk}')">${t.sumBtn}</button>`:''}
     <button class="ghost" onclick="convPicker('${sk}')">${t.jumpConv}</button>
     <button class="ghost" onclick="home()">${t.back}</button></div>
-    ${opt.length?`<div class="sub" style="font-size:12px;margin:8px 0 0">${t.optNote}</div>`:''}</div>`;
+    ${opt.length?`<div class="sub" style="font-size:12px;margin:8px 0 0">${t.optNote}${tip('coreopt')}</div>`:''}</div>`;
   drawPair();
 }
 /* 对比例子：先选哪句更深 → 再选差在哪条标准 → 揭示解释。选择落日志，可看练习前的辨别力。 */
@@ -873,7 +1083,7 @@ function sideHist(){
     </div>`).join('')}</div>`;
 }
 function layerPick(){
-  return `<label>${t.layerAsk}</label>
+  return `<label>${t.layerAsk}${tip('layer')}</label>
     <div class="pick" id="lpick">${['content','feeling','meaning','none'].map(k=>
       `<button class="${SELF_LAYER===k?'sel':''}" onclick="SELF_LAYER='${k}';document.querySelectorAll('#lpick button').forEach(b=>b.classList.remove('sel'));this.classList.add('sel')">${t.layerNames[k]}</button>`).join('')}</div>`;
 }
@@ -910,8 +1120,8 @@ function render(prevResp){
   $('#app').innerHTML=`<div class="cols"><div>
   <div class="card">
     ${stageBar(2)}${goalLine()}
-    <span class="tag">${s.name} · ${cur.optional?t.opt+' · ':''}${isFix?t.fixTag+' · ':''}${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
-    ${isFix?`<div class="sub" style="font-size:13px;margin:8px 0">${t.fixIntro}</div>`:''}
+    ${ftag('lian')}<span class="tag">${s.name} · ${cur.optional?t.opt+' · ':''}${isFix?t.fixTag+' · ':''}${LV(cur.level)} · ${t.qOf(qi+1,queue.length)} · ${t.attempt(attempt)}</span>
+    ${isFix?`<div class="sub" style="font-size:13px;margin:8px 0">${t.fixIntro}${tip('fix')}</div>`:''}
     <div class="bg">${cur.background}</div>
     <div class="ctx">${cur.context.replace(/\n/g,'<br>')}</div>
     <div class="utt">${cur.affect?`<span class="sub" style="font-size:12px">〔${t.affectPre}${cur.affect}〕</span><br>`:''}${cur.utterance}</div>
@@ -920,7 +1130,7 @@ function render(prevResp){
     <label>${isFix?t.fixNow:t.respLabel(s.name)}</label>
     <textarea id="resp">${prevResp||''}</textarea>
     ${layerPick()}
-    <label>${t.selfRate}<span class="sub" style="font-size:12px"> ${t.selfRateNote}</span></label>
+    <label>${t.selfRate}<span class="sub" style="font-size:12px"> ${t.selfRateNote}</span>${tip('rate')}</label>
     <div class="rate"><span>0</span><input id="rate" type="range" min="0" max="10" value="5"
       oninput="RATE_TOUCHED=true;$('#rateV').textContent=this.value"><span>10</span><span id="rateV" style="color:var(--sub)">${t.unrated}</span></div>
     <button id="go" onclick="submit()">${t.submit}</button>
@@ -983,10 +1193,10 @@ function showFeedback(f,resp,myLayer,realLayer,ts){
     ${cs?`<dt style="color:var(--sub);font-size:12px;margin-top:10px">${t.critTitle}</dt>
       <ul class="crit">${cs}</ul>`:''}
     <div id="exbox">${EX_OK(cur.skill,v)
-      ?`<button class="ghost" id="exbtn" onclick="getExample('${v}')" style="font-size:13px;padding:6px 14px">${t.exBtn}</button>`
+      ?`<button class="ghost" id="exbtn" onclick="getExample('${v}')" style="font-size:13px;padding:6px 14px">${t.exBtn}</button>${tip('example')}`
       :`<div class="sub" style="font-size:12px;margin-top:10px">${t.exNone}</div>`}</div>
     ${canRetry?`<button onclick="retry('${encodeURIComponent(resp)}')">${t.retry(attempt+1)}</button>`:''}
-    <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button></div>`;
+    <button class="${canRetry?'ghost':''}" onclick="next()">${t.next}</button>${canRetry?tip('retry'):''}</div>`;
   const sd=$('#side'); if(sd)sd.innerHTML=sideRef()+calCard()+sideHist();
   window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
@@ -1020,7 +1230,7 @@ function next(){
 }
 function diffCheck(lv,nextLv){
   narrow();
-  $('#app').innerHTML=`<div class="card">${stageBar(2)}<span class="tag">${t.diffTitle(LV(lv))}</span>
+  $('#app').innerHTML=`<div class="card">${stageBar(2)}${ftag('lian')}<span class="tag">${t.diffTitle(LV(lv))}</span>${tip('diff')}
     <p style="margin:10px 0">${t.diffQ}</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button onclick="diffAns('${lv}','too_easy')">${t.tooEasy}</button>
@@ -1069,7 +1279,7 @@ function moduleSummary(sk,headline){
       <button class="ghost" onclick="historyPage('${sk}')">${t.histBtn}</button>
       <button class="ghost" onclick="home()">${t.home}</button></div>`;
   if(!atts.length){
-    $('#app').innerHTML=`<div class="card"><span class="tag">${t.sumTitle(s.name)}</span><p class="sub" style="margin:10px 0">${t.sumEmpty}</p>${btns}</div>`;return;
+    $('#app').innerHTML=`<div class="card">${ftag('kan')}<span class="tag">${t.sumTitle(s.name)}</span>${tip('summary')}<p class="sub" style="margin:10px 0">${t.sumEmpty}</p>${btns}</div>`;return;
   }
   // 每题最近一次判定、首次命中、改写后命中
   const vc={hit:0,partial:0,miss:0};let first=0,improved=0;
@@ -1101,7 +1311,7 @@ function moduleSummary(sk,headline){
   const bar=(label,n,tot,hl)=>`<div class="lbar ${hl?'target':''}"><span>${label}</span><div class="track"><div class="fill" style="width:${tot?Math.round(n/tot*100):0}%"></div></div><span>${n}</span></div>`;
   $('#app').innerHTML=`<div class="card">
     ${headline?`<div style="font-weight:700;margin-bottom:8px">${headline}</div>`:''}
-    <span class="tag">${t.sumTitle(s.name)}</span>
+    ${ftag('kan')}<span class="tag">${t.sumTitle(s.name)}</span>${tip('summary')}
     <div class="sub" style="margin:6px 0 10px">${t.sumBasis(its.length,atts.length)} · ${t.progCore(cd,core.length)}${opt.length?' · '+t.progOpt(od,opt.length):''}</div>
     <div class="notecard">
       <h4>${t.sumNext}</h4>
@@ -1141,7 +1351,7 @@ function historyPage(sk){
   const its=[...modItems(sk,'core'),...modItems(sk,'opt')];
   const convs=PROG.convs.map((c,i)=>[c,i]).filter(([c])=>c.skill===sk).reverse();
   $('#app').innerHTML=`<div class="card">
-    <span class="tag">${t.histTitle2}</span>
+    ${ftag('kan')}<span class="tag">${t.histTitle2}</span>${tip('history')}
     <div class="pick" style="margin:10px 0 12px">${sks.map(k=>`<button class="${k===sk?'sel':''}" onclick="historyPage('${k}')">${SKILLS[k]}</button>`).join('')}</div>
     ${its.some(isDone)?its.map(itemRow).join(''):`<div class="sub" style="margin:0">${t.histNoItems}</div>`}
     <h4 style="font-size:14px;color:var(--accent);margin:16px 0 6px">${t.histConvTitle}</h4>
@@ -1161,7 +1371,7 @@ function openSavedNote(i){
   const prevConv=CONV;CONV={skill:c.skill};
   const card=noteCard(c,true);CONV=prevConv;
   $('#app').innerHTML=`<div class="card">${stageBar(3)}
-    <span class="tag">${(c.ts||'').slice(0,16)} · ${esc2(c.category||'')}</span>
+    ${ftag('kan')}<span class="tag">${(c.ts||'').slice(0,16)} · ${esc2(c.category||'')}</span>
     ${card}
     ${c.summary?`<div class="sumbox"><dt>${t.smPattern}</dt><dd>${esc2(c.summary.pattern||'—')}</dd><dt>${t.smDirection}</dt><dd>${esc2(c.summary.direction||'—')}</dd></div>`:''}
     <button class="ghost" onclick="historyPage('${c.skill}')">${t.histBack}</button></div>`;
@@ -1190,7 +1400,8 @@ async function convPickerInner(sk){
   const opts=list.map(c=>`<option value="${esc2(c.key)}">${esc2(c.category)}</option>`).join('');
   $('#app').innerHTML=`<div class="card">${stageBar(2)}
     ${goalLine()}
-    <h2 style="margin:0 0 6px;font-size:19px">${t.pickTitle}</h2>
+    ${ftag('yong')}
+    <h2 style="margin:4px 0 6px;font-size:19px">${t.pickTitle}${tip('conv')}</h2>
     <div class="sub" style="margin-bottom:18px">${t.pickSub(s.name)}</div>
     ${failed?`<div class="err">${t.casesFail}</div>`:''}
     <select id="casesel" required onchange="onCasePick()">
@@ -1241,7 +1452,7 @@ function drawConv(busy){
   const s=SKILL_INTRO[CONV.skill];
   $('#app').innerHTML=`<div class="card">${stageBar(2)}
     ${goalLine()}
-    <span class="tag">${t.convTag(s.name,CONV.turn,CONV.max)}</span>
+    ${ftag('yong')}<span class="tag">${t.convTag(s.name,CONV.turn,CONV.max)}</span>
     <div class="bg">${CONV.bg}</div>
     <div class="chat" id="chat">${CONV.msgs.map(m=>`<div class="msg ${m.role==='client'?'client':'me'}">${esc2(m.text)}</div>`).join('')}
       ${busy?`<div class="msg typing">${t.typing}</div>`:''}</div>
@@ -1252,6 +1463,7 @@ function drawConv(busy){
         <button class="ghost" id="cpolish" onclick="convPolish()" ${busy?'disabled':''} style="margin-top:6px;font-size:13px;padding:6px 12px">${t.polishBtn}</button>
       </div>
     </div>
+    <div class="sub" style="font-size:12px;margin:6px 0 0">${t.polishWhat}${tip('polish')}</div>
     <div id="polishbox"></div>
     <div style="display:flex;justify-content:space-between;margin-top:10px">
       <span class="sub" style="font-size:12px">${CONV.canEnd?t.canEnd:t.needMore(CONV.min)}</span>
@@ -1378,7 +1590,7 @@ function noteCard(d,noJudge){
   return `<div class="notecard">
     <h4>${t.noteTitle}</h4>
     <div class="sub" style="margin-bottom:6px">${t.cHit} ${(d.verdicts||[]).filter(v=>v==='hit').length} · ${t.cPartial} ${(d.verdicts||[]).filter(v=>v==='partial').length} · ${t.cMiss} ${(d.verdicts||[]).filter(v=>v==='miss').length}</div>
-    ${d.understood_curve&&d.understood_curve.length>1?`<h4>${t.noteCurve}</h4>${bigCurve(d.understood_curve,lines)}
+    ${d.understood_curve&&d.understood_curve.length>1?`<h4>${t.noteCurve}${tip('curve')}</h4>${bigCurve(d.understood_curve,lines)}
       <div class="sub" style="font-size:11px;margin:2px 0 0">${t.noteCurveTip}</div>`:''}
     ${L.length?`<h4>${t.noteLayers}</h4>${bars}`:''}
     ${noJudge?'':`<h4>${t.noteJudge}</h4><div id="judgebox">${judgeHtml()}</div>`}
@@ -1398,7 +1610,7 @@ function drawDebrief(d){
   const VB=v=>`<span style="font-size:12px;padding:1px 8px;border-radius:99px;${v==='hit'?'background:var(--hitbg);color:var(--hit)':v==='partial'?'background:var(--partialbg);color:var(--partial)':'background:var(--missbg);color:var(--miss)'}">${{hit:t.cHit,partial:t.cPartial,miss:t.cMiss}[v]||v}</span>`;
   DEBRIEF_JUDGE={};
   $('#app').innerHTML=`<div class="card">${stageBar(3)}
-    <span class="tag">${t.debriefTag(d.turns)}</span>
+    ${ftag('kan')}<span class="tag">${t.debriefTag(d.turns)}</span>
     ${noteCard(d)}
     ${d.prev_goal?`<div id="goalcheck" style="font-size:14px;background:#f6f8fb;border:1px dashed var(--accent);border-radius:8px;padding:12px 14px;margin:8px 0">
       <b>${t.goalLookBack}</b>${d.prev_goal_source==='prospective'?t.goalWasPros:t.goalWas}<i>${esc2(d.prev_goal)}</i><br>${t.goalAsk}
@@ -1410,7 +1622,7 @@ function drawDebrief(d){
     <div class="sumbox"><dt>${t.smPattern}</dt><dd>${esc2(sm.pattern||'—')}</dd>
       <dt>${t.smDirection}</dt><dd>${esc2(sm.direction||'—')}</dd>
       ${sm.moment?`<dt>${t.smMoment}</dt><dd>${esc2(sm.moment)}</dd>`:''}</div>
-    <div style="margin-top:16px"><b>${t.replayN(d.moments.length)}</b>
+    <div style="margin-top:16px"><b>${t.replayN(d.moments.length)}</b>${tip('replay')}
       <span class="sub" style="font-size:12px">${t.replayNote}</span></div>
     ${d.moments.map((m,i)=>`<div class="moment" id="m${i}">
       <div class="utt" style="font-size:14px">${esc2(m.client)}</div>

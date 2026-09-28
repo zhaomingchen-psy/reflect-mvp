@@ -25,7 +25,7 @@ def load_env():
                         k, v = line.split('=', 1)
                         env[k.strip()] = v.strip()
             break
-    for k in ('API_KEY', 'BASE_URL', 'MODEL', 'MODEL_GEN', 'ACCESS_CODE', 'LOG_DIR'):
+    for k in ('API_KEY', 'BASE_URL', 'MODEL', 'MODEL_GEN', 'ACCESS_CODE', 'ADMIN_CODE', 'LOG_DIR', 'LLM_CONCURRENCY'):
         if os.environ.get(k):
             env[k] = os.environ[k]
     env.setdefault('BASE_URL', 'https://open.bigmodel.cn/api/paas/v4')
@@ -36,7 +36,8 @@ def load_env():
     return env
 
 ENV = load_env()
-ACCESS_CODE = (ENV.get('ACCESS_CODE') or '').strip()   # 非空则全站需要口令
+ACCESS_CODE = (ENV.get('ACCESS_CODE') or '').strip()   # 非空则全站需要口令（学员用）
+ADMIN_CODE = (ENV.get('ADMIN_CODE') or '').strip()     # 研究者口令：复盘标注页、数据导出只认它
 
 if ENV.get('LOG_DIR'):
     LOG_DIR = ENV['LOG_DIR']
@@ -99,7 +100,11 @@ from concurrent.futures import ThreadPoolExecutor  # noqa: E402
 SESSIONS = {}            # session_id -> dict(case, skill, history, states, done)
 SESS_LOCK = threading.Lock()
 
-def call_llm(sys_p, usr_p, retry=1, model=None):
+# 课堂里几十人同时提交时，模型接口会因并发过高拒绝请求。这里限制同时在途的调用数，
+# 其余请求排队等待，而不是直接失败；失败的调用按 1.5s、4s、8s 退避重试。
+LLM_SLOTS = threading.BoundedSemaphore(int(ENV.get('LLM_CONCURRENCY') or 6))
+
+def call_llm(sys_p, usr_p, retry=3, model=None):
     m = model or ENV['MODEL']
     payload = {'model': m, 'temperature': 0,
         'messages': [{'role': 'system', 'content': sys_p}, {'role': 'user', 'content': usr_p}]}
@@ -111,8 +116,9 @@ def call_llm(sys_p, usr_p, retry=1, model=None):
     last = None
     for a in range(retry + 1):
         try:
-            with urllib.request.urlopen(req, timeout=90) as r:
-                d = json.loads(r.read().decode())
+            with LLM_SLOTS:
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    d = json.loads(r.read().decode())
             txt = d['choices'][0]['message']['content'].strip()
             if txt.startswith('```'):
                 txt = txt.split('```')[1]
@@ -123,7 +129,7 @@ def call_llm(sys_p, usr_p, retry=1, model=None):
         except Exception as e:
             last = str(e)[:200]
             if a < retry:
-                time.sleep(1.5)
+                time.sleep((1.5, 4, 8, 12)[min(a, 3)])
     return None, last
 
 def log_line(rec):
@@ -260,6 +266,65 @@ def user_history(user, lang):
                                                        verdict=(evals[i].get('verdict') if i < len(evals) else None))
                                                   for i, (c, p) in enumerate(pairs)]))
     return dict(items=items, fix=fixes, convs=convs)
+
+
+def _rater_id(session):
+    """评分编号：由会话号和研究者口令算出的固定短码，看不出学员、组别和时间顺序。"""
+    import hashlib
+    return 'R' + hashlib.sha256(((ADMIN_CODE or 'reflect') + ':' + (session or '')).encode()).hexdigest()[:8].upper()
+
+def export_sca(what):
+    """SCA 盲评导出。sca_rater 给评分者：只有编号与对话，去掉姓名、内在状态、时间、卷别；
+    按编号排序，顺序与施测先后无关。sca_key 给研究者：编号 ↔ 学员、卷别、时间。只收完整会谈。"""
+    import csv, io
+    sessions = []
+    for fn in sorted(os.listdir(LOG_DIR)):
+        if not (fn.startswith('sca_') and fn.endswith('.jsonl')):
+            continue
+        with open(os.path.join(LOG_DIR, fn), encoding='utf-8') as f:
+            for line in f:
+                try:
+                    r = json.loads(line)
+                except Exception:
+                    continue
+                if r.get('type') == 'session' and r.get('history'):
+                    sessions.append(r)
+    sessions.sort(key=lambda r: _rater_id(r.get('session')))
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    if what == 'sca_rater':
+        w.writerow(['rater_id', 'lang', 'turn', 'speaker', 'text'])
+        for r in sessions:
+            rid, n = _rater_id(r.get('session')), 0
+            for h in r['history']:
+                if h.get('role') == 'counselor':
+                    n += 1
+                w.writerow([rid, r.get('lang') or 'zh', n, 'client' if h.get('role') == 'client' else 'counsellor',
+                            h.get('text', '')])
+        name = 'SCA_rater_blind_%s.csv' % time.strftime('%Y%m%d')
+    else:
+        w.writerow(['rater_id', 'user', 'form', 'lang', 'started', 'counsellor_turns', 'session'])
+        for r in sessions:
+            w.writerow([_rater_id(r.get('session')), r.get('user') or '', r.get('form'), r.get('lang') or 'zh',
+                        r.get('ts'), sum(1 for h in r['history'] if h.get('role') == 'counselor'), r.get('session')])
+        name = 'SCA_key_RESEARCHER_ONLY_%s.csv' % time.strftime('%Y%m%d')
+    return ('\ufeff' + buf.getvalue()).encode('utf-8'), name   # 带 BOM，Excel 打开中文不乱码
+
+def export_logs():
+    """全部原始日志，按文件名分组。"""
+    out = {}
+    for fn in sorted(os.listdir(LOG_DIR)):
+        if not fn.endswith('.jsonl'):
+            continue
+        rows = []
+        with open(os.path.join(LOG_DIR, fn), encoding='utf-8') as f:
+            for line in f:
+                try:
+                    rows.append(json.loads(line))
+                except Exception:
+                    pass
+        out[fn] = rows
+    return out
 
 
 # ---------- 对话练习 ----------
@@ -460,9 +525,32 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):  # 安静一点
         pass
 
+    def _send_file(self, data, filename, ctype):
+        from urllib.parse import quote
+        self.send_response(200)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Disposition', "attachment; filename*=UTF-8''" + quote(filename))
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _admin(self):
+        """研究者口令：本地开发（两个口令都没设）时放行；线上设了学员口令却没设研究者口令时，一律拒绝。"""
+        if not ACCESS_CODE and not ADMIN_CODE:
+            return True
+        if not ADMIN_CODE:
+            return False
+        c = (self.headers.get('X-Admin-Code') or '').strip()
+        if not c:
+            from urllib.parse import urlparse, parse_qs
+            c = ((parse_qs(urlparse(self.path).query).get('admin') or [''])[0]).strip()
+        return c == ADMIN_CODE
+
     def _authed(self):
-        """口令校验：ACCESS_CODE 为空时始终放行。"""
+        """口令校验：ACCESS_CODE 为空时始终放行；研究者口令也能用全站。"""
         if not ACCESS_CODE:
+            return True
+        if ADMIN_CODE and self._admin():
             return True
         c = self.headers.get('X-Access-Code') or ''
         if c.strip() == ACCESS_CODE:
@@ -511,9 +599,21 @@ class H(BaseHTTPRequestHandler):
             user = (q.get('user') or [''])[0].strip()
             self._send(200, user_history(user, norm_lang((q.get('lang') or ['zh'])[0])))
         elif base == '/api/review_data':
-            if not self._authed():
-                return self._send(401, {'error': 'access code required'})
+            if not self._admin():
+                return self._send(403, {'error': 'researcher code required'})
             self._send(200, review_data())
+        elif base == '/api/export':
+            if not self._admin():
+                return self._send(403, {'error': 'researcher code required'})
+            from urllib.parse import urlparse, parse_qs
+            what = (parse_qs(urlparse(self.path).query).get('what') or [''])[0]
+            if what in ('sca_rater', 'sca_key'):
+                body, name = export_sca(what)
+                return self._send_file(body, name, 'text/csv; charset=utf-8')
+            if what == 'logs':
+                return self._send_file(json.dumps(export_logs(), ensure_ascii=False, indent=1).encode('utf-8'),
+                                       'reflect_logs_%s.json' % time.strftime('%Y%m%d'), 'application/json')
+            self._send(400, {'error': 'what must be sca_rater | sca_key | logs'})
         elif base == '/api/goal':
             from urllib.parse import urlparse, parse_qs
             q = parse_qs(urlparse(self.path).query)

@@ -33,12 +33,26 @@
   .judge input{flex:1;min-width:160px}
   .saved{font-size:12px;color:var(--hit)}
   .empty{color:var(--sub);padding:40px;text-align:center}
+  .export{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 18px;margin:0 0 16px;font-size:13px}
+  .export a{display:inline-block;margin:6px 10px 0 0;padding:5px 14px;border:1px solid var(--accent);border-radius:99px;
+            color:var(--accent);text-decoration:none;cursor:pointer}
+  .export .note{color:var(--sub);font-size:12px;margin-top:8px}
+  .gate{max-width:360px;margin:80px auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px}
+  .gate input{font:inherit;width:100%;padding:6px 10px;margin:10px 0;border:1px solid var(--line);border-radius:6px}
+  .gate button{font:inherit;padding:5px 16px;border-radius:99px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+  .gate .err{color:var(--miss);font-size:13px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>判定复盘 · 人工标注</h1>
   <div class="stats" id="stats"></div>
+  <div class="export">数据导出：
+    <a onclick="dl('sca_rater')">SCA 盲评表（给评分者）</a>
+    <a onclick="dl('sca_key')">SCA 解码表（仅研究者）</a>
+    <a onclick="dl('logs')">全部原始日志</a>
+    <div class="note">盲评表只有随机编号和对话文本，按编号排序，看不出学员、时间和组别。解码表把编号对回学员和卷别，不要发给评分者。只收完整会谈。</div>
+  </div>
   <div class="filter">
     筛选：<select id="fSkill" onchange="draw()"><option value="">全部技能</option></select>
     <select id="fVerdict" onchange="draw()"><option value="">全部判定</option>
@@ -53,8 +67,28 @@
 const $=s=>document.querySelector(s);
 const VW={hit:'✓ hit',partial:'◐ partial',miss:'✗ miss'};
 let DATA=null;
+// 研究者口令：只存在本机浏览器里，每个请求都带上
+let ADMIN=localStorage.getItem('reflect_admin')||'';
+const H=()=>ADMIN?{'X-Admin-Code':ADMIN}:{};
+function gate(err){
+  document.querySelector('.wrap').innerHTML=`<div class="gate"><b>研究者口令</b>
+    <div style="font-size:13px;color:var(--sub);margin-top:4px">这一页和数据导出只对研究者开放，学员口令进不来。</div>
+    <input id="ac" type="password" autocomplete="off" onkeydown="if(event.key==='Enter')enter()">
+    <button onclick="enter()">进入</button> ${err?'<span class="err">口令不对</span>':''}</div>`;
+  setTimeout(()=>$('#ac').focus(),0);
+}
+function enter(){ADMIN=$('#ac').value.trim();localStorage.setItem('reflect_admin',ADMIN);location.reload();}
+async function dl(what){
+  const r=await fetch('/api/export?what='+what,{headers:H()});
+  if(!r.ok){alert('导出失败（'+r.status+'）');return;}
+  const m=/filename\*=UTF-8''([^;]+)/.exec(r.headers.get('Content-Disposition')||'');
+  const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());
+  a.download=m?decodeURIComponent(m[1]):what;document.body.appendChild(a);a.click();a.remove();
+}
 async function boot(){
-  DATA=await (await fetch('/api/review_data')).json();
+  const r=await fetch('/api/review_data',{headers:H()});
+  if(r.status===403||r.status===401){if(ADMIN)localStorage.removeItem('reflect_admin');return gate(!!ADMIN);}
+  DATA=await r.json();
   const sk=$('#fSkill');
   for(const [k,v] of Object.entries(DATA.skills)){const o=document.createElement('option');o.value=k;o.textContent=v;sk.appendChild(o);}
   const us=[...new Set(DATA.entries.map(e=>e.user).filter(Boolean))];
@@ -116,7 +150,7 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
 async function mark(key,agree){
   const ck=cssKey(key);
   const body={key,agree,expert_verdict:$('#ev-'+ck).value||null,note:$('#nt-'+ck).value};
-  const r=await fetch('/api/annotate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch('/api/annotate',{method:'POST',headers:{'Content-Type':'application/json',...H()},body:JSON.stringify(body)});
   if(r.ok){DATA.annotations[key]={...body};$('#sv-'+ck).textContent='已保存';draw();}
   else{$('#sv-'+ck).textContent='保存失败';}
 }
